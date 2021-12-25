@@ -10,6 +10,7 @@ import sys
 # 将common路径加入模块查询路径
 BASE_DIR = dirname(dirname(abspath(__file__)))
 sys.path.insert(0, BASE_DIR + '/common')
+sys.path.insert(1, BASE_DIR + '/celery_tasks')
 
 
 from app.settings.config import config_dict
@@ -25,11 +26,35 @@ def create_flask_app(type):
 
     # 先加载默认配置
     app.config.from_object(config_class)
+
+
     # 在加载额外配置
     app.config.from_envvar(EXTRA_ENV_CONFIG, silent=True)
 
     # 返回应用
     return app
+
+
+from celery import Celery
+
+
+
+#使celery接入Flask上下文
+def register_celery(app=None):
+    celery.config_from_object('celery_tasks.config')
+
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery.Task = ContextTask
+    return celery
+
+
+
+
+
 
 
 from flask_sqlalchemy import SQLAlchemy
@@ -52,7 +77,9 @@ def register_extensions(app):
     global redis_client
     redis_client = StrictRedis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'], decode_responses=True)
 
-
+    # 添加转换器
+    from utils.converters import register_converters
+    register_converters(app)
 
 
 def register_bp(app:Flask):
@@ -67,9 +94,12 @@ def create_app(type):
     app = create_flask_app(type)
 
     # 组件初始化
+    # register_celery(app=app)
     register_extensions(app)
-
+    # app.app_context().push()
     # 注册蓝图
     register_bp(app)
+
+
     return app
 

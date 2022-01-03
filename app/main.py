@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# author: JK time:2021/12/22
 
 from app import create_app
 from flask import jsonify

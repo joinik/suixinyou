@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-# author: JK time:2021/12/24
 
 from flask import Blueprint
 from flask_restful import Api
-from .passport import SMSCodeResource
+from .passport import SMSCodeResource, RegisterResource, LoginResource, UsernameResource, MobileResource
 from utils.constants import BASE_URL_PRIFIX
 
 # 1.创建蓝图对象
@@ -20,4 +18,8 @@ user_api.representation('application/json')(output_json)
 
 # 3.添加类视图
 user_api.add_resource(SMSCodeResource, '/sms/codes/<mob:mobile>')
+user_api.add_resource(UsernameResource, '/usernames/<uname:username>')
+user_api.add_resource(MobileResource, '/mobiles/<mob:mobile>')
+user_api.add_resource(RegisterResource, '/register')
+user_api.add_resource(LoginResource, '/login')
 

@@ -2,9 +2,14 @@ import json
 
 from ronglian_sms_sdk import SmsSDK
 
-accId = '8aaf0708780055cd0178d32e770f4fc6'
-accToken = '0b7fe4917cf7487f89d8dcfbd68d80f8'
-appId = '8aaf0708780055cd0178d32e77db4fcd'
+# accId = '8aaf0708780055cd0178d32e770f4fc6'
+# accToken = '0b7fe4917cf7487f89d8dcfbd68d80f8'
+# appId = '8aaf0708780055cd0178d32e77db4fcd'
+
+# lzy
+accId = '8aaf0708780055cd0178d32fb5654fd9'
+accToken = '2da21647480645d2b6e694f25aaa2be2'
+appId = '8a216da878005a800178d330f79d4ffa'
 
 
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# author: JK time:2021/12/22
 
 
 from flask import Flask
@@ -8,6 +6,10 @@ import sys
 
 
 # 将common路径加入模块查询路径
+from flask_migrate import Migrate
+from redis.sentinel import Sentinel
+from rediscluster import RedisCluster
+
 BASE_DIR = dirname(dirname(abspath(__file__)))
 sys.path.insert(0, BASE_DIR + '/common')
 sys.path.insert(1, BASE_DIR + '/celery_tasks')
@@ -27,7 +29,6 @@ def create_flask_app(type):
     # 先加载默认配置
     app.config.from_object(config_class)
 
-
     # 在加载额外配置
     app.config.from_envvar(EXTRA_ENV_CONFIG, silent=True)
 
@@ -35,36 +36,25 @@ def create_flask_app(type):
     return app
 
 
-from celery import Celery
-
-
-
-#使celery接入Flask上下文
-def register_celery(app=None):
-    celery.config_from_object('celery_tasks.config')
-
-    class ContextTask(celery.Task):
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return self.run(*args, **kwargs)
-
-    celery.Task = ContextTask
-    return celery
-
-
-
-
-
-
-
-from flask_sqlalchemy import SQLAlchemy
 from redis import StrictRedis
 
-# sqlalchemy 组件对象
-db = SQLAlchemy()
+# from flask_sqlalchemy import SQLAlchemy
+# # sqlalchemy 组件对象
+# db = SQLAlchemy()
 
-# redis数据库操作对象
-redis_client = None     # type: StrictRedis
+from models.routing_db.routing_sqlalchemy import RoutingSQLAlchemy
+
+# mysql数据库操作对象
+db = RoutingSQLAlchemy()
+
+
+redis_master = None  # type: StrictRedis
+redis_slave = None  # type: StrictRed
+
+# 创建集群客户端对象
+redis_cluster = None
+
+
 
 def register_extensions(app):
     """组件初始化"""
@@ -74,8 +64,24 @@ def register_extensions(app):
     db.init_app(app)
 
     # redis组件初始化
-    global redis_client
-    redis_client = StrictRedis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'], decode_responses=True)
+    # global redis_client
+    # redis_client = StrictRedis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'], decode_responses=True)
+
+    # 哨兵客户端
+    global redis_master, redis_slave
+    sentinel = Sentinel(app.config['SENTINEL_LIST'])
+    redis_master = sentinel.master_for(app.config['SERVICE_NAME'], decode_responses=True)
+    redis_slave = sentinel.slave_for(app.config['SERVICE_NAME'], decode_responses=True)
+
+
+    # redis集群组件初始化
+    global redis_cluster
+    redis_cluster = RedisCluster(startup_nodes=app.config['CLUSTER_NODES'], decode_responses=True, )
+
+    # 数据迁移组件初始化
+    Migrate(app, db)
+    # 导入模型类
+    from models import user
 
     # 添加转换器
     from utils.converters import register_converters
@@ -94,12 +100,10 @@ def create_app(type):
     app = create_flask_app(type)
 
     # 组件初始化
-    # register_celery(app=app)
     register_extensions(app)
-    # app.app_context().push()
+
     # 注册蓝图
     register_bp(app)
-
 
     return app
 

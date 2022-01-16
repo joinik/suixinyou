@@ -38,14 +38,14 @@ def create_flask_app(type):
 
 from redis import StrictRedis
 
-# from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 # # sqlalchemy 组件对象
-# db = SQLAlchemy()
+db = SQLAlchemy()
 
 from models.routing_db.routing_sqlalchemy import RoutingSQLAlchemy
 
 # mysql数据库操作对象
-db = RoutingSQLAlchemy()
+# db = RoutingSQLAlchemy()
 
 
 redis_master = None  # type: StrictRedis
@@ -67,12 +67,6 @@ def register_extensions(app):
     # global redis_client
     # redis_client = StrictRedis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'], decode_responses=True)
 
-    # 哨兵客户端
-    global redis_master, redis_slave
-    sentinel = Sentinel(app.config['SENTINEL_LIST'])
-    redis_master = sentinel.master_for(app.config['SERVICE_NAME'], decode_responses=True)
-    redis_slave = sentinel.slave_for(app.config['SERVICE_NAME'], decode_responses=True)
-
 
     # redis集群组件初始化
     global redis_cluster
@@ -86,6 +80,10 @@ def register_extensions(app):
     # 添加转换器
     from utils.converters import register_converters
     register_converters(app)
+
+    # 添加请求钩子
+    from utils.middlewares import get_userinfo
+    app.before_request(get_userinfo)
 
 
 def register_bp(app:Flask):

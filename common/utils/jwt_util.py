@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # author: JK time:2021/12/27
-
-
+from datetime import datetime, timedelta
 
 import jwt
 from flask import current_app
@@ -44,6 +43,40 @@ def verify_jwt(token, secret=None):
         payload = None
 
     return payload
+
+
+
+
+
+def _generate_tokens(user_id,  need_refresh_token=True):
+
+    # 生成业务token 2h有效期
+    payload = {
+        'user_id': user_id
+    }
+
+    # 有效期截止时间
+    expiry = datetime.utcnow() + timedelta(hours=current_app.config['JWT_EXPIRE_HOURS'])
+
+    # 调用 生成token
+    token = generate_jwt(payload, expiry)
+
+    # 生成refreshtoken 14天有效期
+    refresh_payload = {
+        'user_id': user_id,
+        'is_refresh': True
+    }
+
+    refresh_token = None
+
+    if  need_refresh_token:
+        # 14天
+        refresh_expiry = datetime.utcnow() + timedelta(days=current_app.config['JWT_EXPIRE_DAYS'])
+
+        refresh_token = generate_jwt(refresh_payload, refresh_expiry)
+
+    return token, refresh_token
+
 
 
 

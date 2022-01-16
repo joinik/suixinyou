@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 migrations
+.qiniu_pythonsdk_hostscache.json
 # C extensions
 *.so
 

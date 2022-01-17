@@ -22,7 +22,7 @@ def get_userinfo():
         data = verify_jwt(token)
 
         if data:    # 校验成功
-            g.user_id = data.get('userid')   # 如果已登录，  userid=2
+            g.user_id = data.get('user_id')   # 如果已登录，  userid=2
             g.is_refresh = data.get('is_refresh')
 
 

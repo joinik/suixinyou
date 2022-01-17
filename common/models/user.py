@@ -15,20 +15,25 @@ class Area(db.Model):
     __table_args__ = {"extend_existing": True}
 
     id = db.Column(db.Integer, primary_key=True, doc='地区id')
-    name = db.Column(db.String(20), doc='地区名称')
+    area_name = db.Column(db.String(20), doc='地区名称')
     city_code = db.Column(db.String(12), nullable=True, doc='地区编码')
     city_level = db.Column(db.Integer, nullable=True, doc='地区级别')
-    parent_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), doc='上级行政区')
-    # subs = db.relationship("common.models.user.Area", back_populates="parent")
-    # parent = db.relationship("common.models.user.Area", backref=db.backref("subs", userlist=True,),
-    #                          primaryjoin=foreign(parent_id) == remote(id))
+    parent_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), nullable=True, doc='上级行政区')
+
+    parent = db.relationship("common.models.user.Area",
+                             primaryjoin=('tb_area.c.id==tb_area.c.parent_id'),
+                             remote_side=[id],
+                             backref="subs",
+                             # foreign_keys=[parent_id],
+                             )
+    # parent = db.relationship("common.models.user.Area", remote_side=[id])
     # parent = db.relationship("common.models.user.Area", remote_side=[id],
     #                          backref=db.backref('subs', remote_side='{}.id'.format("tb_area")))  # 自关联
 
     def to_dict(self):
         return {
             'id': self.id,
-            'name': self.name,
+            'name': self.area_name,
             # 'parent': self.parent.name if self.parent else self.parent,
             'city_level': self.city_level
         }
@@ -153,34 +158,24 @@ class Article(db.Model):
     area_id = db.Column(db.Integer, db.ForeignKey('tb_area.id'), doc='地区ID')
 
     title = db.Column(db.String(128), doc='文章标题')
-    cover = db.Column(db.JSON, doc='封面')
+    # cover = db.Column(db.JSON, doc='封面')
     ctime = db.Column(db.DateTime, default=datetime.now, doc='创建时间')
     utime = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)  # 记录的更新时间
-    status = db.Column(db.Integer, default=0, doc='文章状态')
+    status = db.Column(db.Integer, default=2, doc='文章状态')
     reason = db.Column(db.String(256), doc='未通过原因')
     comment_count = db.Column(db.Integer, default=0, doc='评论数')
     like_count = db.Column(db.Integer, default=0, doc='点赞数')
     dislike_count = db.Column(db.Integer, default=0, doc='点踩数')
 
     # area = db.relationship("common.models.user.Area", backref='articles', uselist=False)
-    # user = db.relationship("User", backref='articles', uselist=False)
+    # user = db.relationship("common.models.user.User", foreign_keys=[user_id],
+    #                        primaryjoin=foreign(user_id) == remote(User.id),
+    #                        backref='articles', uselist=False)
     # category = db.relationship('Category', backref='articles', uselist=False, doc='频道ID')
     # # 当前新闻的所有评论
     # comments = db.relationship("Comment", lazy="dynamic")
     # article_content = db.relationship("ArticleContent", backref='articles', uselist=False)
 
-    def to_dict(self):
-        """
-        定义一个方法，用来将将对象中的部分属性，转换为字典
-        :return: 一个字典
-        """
-        ret = {
-            "id": self.id,
-            # "area": self.area.area_name,
-            "create_time": self.ctime,
-            "title": self.title
-        }
-        return ret
 
 
 #
@@ -192,7 +187,7 @@ class ArticleContent(db.Model):
     __table_args__ = {"extend_existing": True}
 
     # __table_args__ = {'extend_existing': True}
-    extend_existing = True
+    # extend_existing = True
     article_id = db.Column(db.Integer, db.ForeignKey("article_basic.id"), primary_key=True, doc='文章ID')
     content = db.Column(db.Text, doc='帖文内容')
 

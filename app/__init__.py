@@ -13,6 +13,7 @@ from rediscluster import RedisCluster
 BASE_DIR = dirname(dirname(abspath(__file__)))
 sys.path.insert(0, BASE_DIR + '/common')
 sys.path.insert(1, BASE_DIR + '/celery_tasks')
+sys.path.insert(2, BASE_DIR + '/common/models')
 
 
 from app.settings.config import config_dict
@@ -89,7 +90,9 @@ def register_extensions(app):
 def register_bp(app:Flask):
     """注册蓝图"""
     from app.resource.user import user_bp # 进行局部导入，避免组件没有初始化完成
+    from app.resource.article import article_bp
     app.register_blueprint(user_bp)
+    app.register_blueprint(article_bp)
 
 
 

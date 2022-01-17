@@ -120,9 +120,9 @@ class LoginResource(Resource):
         #     return {'message': 'Invalid Code', 'data': None}, 400
 
         # 存入数据库
-        print('查询数据库')
+        # print('查询数据库')
         user = User.query.options(load_only(User.id)).filter(User.mobile == mobile).first()
-        print('查询结束')
+        # print('查询结束')
         if user:
             user.last_login = datetime.now()
         else:

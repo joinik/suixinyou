@@ -10,6 +10,7 @@ from app.models.user import User, UserProfile
 from utils.parser import image_file
 
 from app import db
+from common.cache.users import UserCache
 from common.utils.img_storage import upload_file
 from common.utils.parser import username_type, email_type
 
@@ -22,19 +23,28 @@ GET
 请求头
 Authorization    用户token
 
-响应数据  json
+响应数据  json  200
 {
     "message": "OK",
     "data": {
-        "id": 1155,
-        "name": "18912323424",
-         "photo": "xxxxx",
-        "intro": "xxx",
+        "id": 1,
+        "name": "dsf12123",
+        "photo": null,
+        "intro": "顶峰就是加肥加大so的设计费级第四节放的数据就",
         "dianzan_count": 0,
         "travel_note_count": 0,
-        "dianliang_area_count": 0
+        "dianliang_area_count": 0,
+        "business": 0,
+        "last_address": null
     }
 }
+
+错误响应 401
+{ 
+    "message": "Invalid Token",
+    "data": null
+}
+
 
 """
 
@@ -46,12 +56,46 @@ class CurrentUserResource(Resource):
         userid = g.user_id
 
         # 查询用户数据
-        user = User.query.options(load_only(User.id))\
-            .filter(User.id == userid).first()
+        # user = User.query.options(load_only(User.id))\
+        #     .filter(User.id == userid).first()
 
-        return user.to_dict()
+        user_cache = UserCache(userid).get()
+        if user_cache:
+            return user_cache
+        else:
+            return {'message': "Invalid User", 'data': None}, 400
 
 
+"""
+获取用户个人信息
+
+请求方式
+GET
+
+请求头
+Authorization    用户token
+
+响应数据  json  200
+{
+    "message": "OK",
+    "data": {
+        "id": 1,
+        "name": "dsf12123",
+        "email": "fdsfd@168.com",
+        "gender": "MAN",
+        "age": 123,
+        "default_address": null
+    }
+}
+
+错误响应 401
+{ 
+    "message": "Invalid Token",
+    "data": null
+}
+
+
+"""
 
 
 
@@ -142,6 +186,10 @@ class UserPhotoResource(Resource):
         # 将数据库中头像url进行更新
         User.query.filter(User.id == userid).update({'profile_photo': file_url})
         db.session.commit()
+
+        # 将数据对象删除
+        usercache = UserCache(userid)
+        usercache.clear()
 
         return {'photo_url': file_url}
 

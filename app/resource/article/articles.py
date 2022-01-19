@@ -9,9 +9,49 @@ from app.models.user import Article, ArticleContent, User, Area
 from common.utils.decorators import login_required
 
 
+
+
+"""
+获取游记信息
+
+请求方式
+GET
+
+响应数据  json  200
+{
+    "message": "OK",
+    "data": {
+        "area_name": "北京市",
+        "art_id": 3,
+        "title": "江西井冈山之旅1",
+        "pubdate": "2022-01-19T10:26:01",
+        "update": "2022-01-19T10:41:49",
+        "aut_id": 1,
+        "aut_name": "dsf12123",
+        "aut_photo": null,
+        "content": "17年4月5日，我们一行十人（其中6人为高中同学），乘坐K495次列车，开始了江西宜春温汤之旅。这次旅行我们已期待很久，早在四个月前，就作了准备，在徐立华同学精心策划下，预订酒店，考虑旅行线路，今天终于出发了！经过一夜行程，于6日一早到达宜春火车站。徐导为我们预订的车辆已在门口等候，一行人浩浩荡荡来到泰轩温泉酒店。下图为酒店外观，及从住宿客房里看到的酒店温泉，还有远处眺望看到的温汤镇的景视。第一印象还不错",
+        "comment_count": 0,
+        "like_count": 0,
+        "dislike_count": 0
+    }
+}
+
+错误响应 403
+{
+    "message": "Access Violation",
+    "data": null
+}
+
+
+"""
+
+
+
+
 class ArticleDetailResource(Resource):
     method_decorators = {'put': [login_required]}
     def get(self, article_id):
+        """查询文章"""
         print("文章id",article_id)
         # 查询基础数据
 
@@ -43,6 +83,7 @@ class ArticleDetailResource(Resource):
         return article_dict
 
     def put(self, article_id):
+        """修改文章"""
         parser = RequestParser()
         parser.add_argument('title', required=True, location='json', type=str)
         # parser.add_argument('cover', required=True, location='json', type=str)
@@ -52,8 +93,9 @@ class ArticleDetailResource(Resource):
         title = args.title
         content = args.content
 
+        # 根据文章id，作者id是否是用户id 查询数据
         data = Article.query.options(load_only(Article.id)). \
-            filter(Article.id == article_id, Article.status == 2).first()
+            filter(Article.id == article_id, Article.status == 2, Article.user_id == g.user_id).first()
 
         if not data:
             return {'message': "Access Violation", 'data': None}, 403
@@ -66,6 +108,7 @@ class ArticleDetailResource(Resource):
         db.session.commit()
 
         return {'article': data.id, 'title': data.title}, 201
+
 
 
 class CreateArticleResource(Resource):
@@ -89,22 +132,26 @@ class CreateArticleResource(Resource):
         content = args.content
 
 
+        try:
+            # 存入数据库
+            article = Article(category_id=category_id, user_id=user_id, area_id=area_id, title=title)
+            print('存储文章基本信息')
+            db.session.add(article)
+            # 先执行插入插入操作， 才能获取article 的id
+            db.session.flush()
+            # db.session.commit()
+            print('存储文章内容')
+            # article_id = db.session.query(Article).order_by(Article.ctime.desc()).all()[0]
+            art_content = ArticleContent(article_id=article.id, content=content)
+            db.session.add(art_content)
+            db.session.commit()
+            return {'article': article.id, 'title': article.title}, 201
 
-        # 存入数据库
-
-        article = Article(category_id=category_id, user_id=user_id, area_id=area_id, title=title)
-        print('存储文章基本信息')
-        db.session.add(article)
-        # 先执行插入插入操作， 才能获取article 的id
-        db.session.flush()
-        # db.session.commit()
-        print('存储文章内容')
-        # article_id = db.session.query(Article).order_by(Article.ctime.desc()).all()[0]
-        art_content = ArticleContent(article_id=article.id, content=content)
-        db.session.add(art_content)
-        db.session.commit()
-
-        return {'article': article.id, 'title': article.title}, 201
+        except Exception as e:
+            db.session.rollback()
+            print(e)
+            return {'message': "Access Violation", 'data': None}, 403
 
 
-# class CreateArticleResource(Resource):
+
+

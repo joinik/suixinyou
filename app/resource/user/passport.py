@@ -12,10 +12,10 @@ from utils.constants import SMS_CODE_EXPIRE
 from celery_tasks.sms.tasks import celery_send_sms_code
 from utils.parser import mobile_type, username_type, pwd_type
 
-from models.user import User
+from app.models.user import User, UserProfile
 from utils.jwt_util import generate_jwt
 
-from common.models.user import UserProfile
+
 from common.utils.jwt_util import _generate_tokens
 
 """
@@ -115,9 +115,9 @@ class LoginResource(Resource):
 
         # 校验短信验证码
         key = 'app:code:{}'.format(mobile)
-        # real_code = redis_cluster.get(key)
-        # if not real_code or real_code != code:
-        #     return {'message': 'Invalid Code', 'data': None}, 400
+        real_code = redis_cluster.get(key)
+        if not real_code or real_code != code:
+            return {'message': 'Invalid Code', 'data': None}, 400
 
         # 存入数据库
         # print('查询数据库')
@@ -128,11 +128,17 @@ class LoginResource(Resource):
         else:
             print("数据库插入用户数据")
             user = User(mobile=mobile, name=mobile, last_login=datetime.now())
-            userprofile = UserProfile()
+            db.session.add(user)
+            # 先插入数据，才能拿到user的id
+            db.session.flush()
+            print("用户的id", user.id)
+
+
+            userprofile = UserProfile(user_id=user.id)
             db.session.add(userprofile)
-            # print("用户的id", user.id)
+            db.session.commit()
+
         # 存入数据库
-        # input("等待")
         db.session.add(user)
         db.session.commit()
 

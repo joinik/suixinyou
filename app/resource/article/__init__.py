@@ -9,6 +9,10 @@ article_bp = Blueprint('articles', __name__, url_prefix=BASE_URL_PRIFIX)
 # 2.创建Api对象
 article_api = Api(article_bp)
 
+# 设置json包装格式
+from utils.output import output_json
+article_api.representation('application/json')(output_json)
+
 
 
 

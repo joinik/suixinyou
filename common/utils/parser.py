@@ -11,7 +11,7 @@ import imghdr
 from datetime import datetime
 
 
-def email(email_str):
+def email_type(email_str):
     """
     检验邮箱格式
     :param email_str: str 被检验字符串

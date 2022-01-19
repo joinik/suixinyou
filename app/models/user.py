@@ -20,13 +20,7 @@ class Area(db.Model):
     city_level = db.Column(db.Integer, nullable=True, doc='地区级别')
     parent_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), nullable=True, doc='上级行政区')
 
-    parent = db.relationship("common.models.user.Area",
-                             primaryjoin=('tb_area.c.id==tb_area.c.parent_id'),
-                             remote_side=[id],
-                             backref="subs",
-                             # foreign_keys=[parent_id],
-                             )
-    # parent = db.relationship("common.models.user.Area", remote_side=[id])
+    parent = db.relationship("Area", backref=db.backref("subs", lazy='dynamic'), remote_side=[id])
     # parent = db.relationship("common.models.user.Area", remote_side=[id],
     #                          backref=db.backref('subs', remote_side='{}.id'.format("tb_area")))  # 自关联
 
@@ -34,7 +28,7 @@ class Area(db.Model):
         return {
             'id': self.id,
             'name': self.area_name,
-            # 'parent': self.parent.name if self.parent else self.parent,
+            'parent': self.parent.area_name if self.parent else None,
             'city_level': self.city_level
         }
 
@@ -58,8 +52,8 @@ class User(db.Model):
     travel_note_num = db.Column(db.Integer, default=0, doc='游记总数')
     dianliang_area_num = db.Column(db.Integer, default=0, doc='点亮地区数')
     last_address_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), doc='用户上次位置')
+    last_address = db.relationship("Area", backref=db.backref('users', uselist=False), uselist=False)
 
-    # last_address = db.relationship("common.models.user.Area", backref='users', uselist=False)
 
     def to_dict(self):
         """模型转字典, 用于序列化处理"""
@@ -72,6 +66,7 @@ class User(db.Model):
             'travel_note_count': self.travel_note_num,
             'dianliang_area_count': self.dianliang_area_num,
             'business': self.business,
+            'last_address': self.last_address.area_name if self.last_address else None,
         }
 
 
@@ -97,7 +92,7 @@ class UserProfile(db.Model):
     __table_args__ = {"extend_existing": True}
     # __table_args__ = {"useexisting": True}
 
-    user_id = db.Column(db.Integer, primary_key=True, doc='用户ID')
+    user_id = db.Column(db.Integer, db.ForeignKey("user_basic.id"), primary_key=True, doc='用户ID')
     email = db.Column(db.String(20), doc='邮箱')
     gender = db.Column(  # 性别
         db.Enum(
@@ -109,13 +104,13 @@ class UserProfile(db.Model):
     age = db.Column(db.Integer, doc='年龄')
     is_admin = db.Column(db.Boolean, default=False, doc='是否为管理员')
     default_address_id = db.Column(db.Integer, db.ForeignKey("tb_address.id"), nullable=True, doc='用户常住地址')
-
-    # default_address = db.relationship(Address, backref='users', uselist=False)
-    # user = db.relationship(User, backref=db.backref('user_profile'), uselist=False)
+    default_address = db.relationship("Address", backref=db.backref('users_profile', uselist=False), uselist=False)
+    user_basic = db.relationship("User", backref=db.backref('user_profile', uselist=False), uselist=False)
 
     def to_dict(self):
         return {
             "id": self.user_id,
+            'name': self.user_basic.name,
             "email": self.email,
             "gender": self.gender,
             "age": self.age,
@@ -167,15 +162,15 @@ class Article(db.Model):
     like_count = db.Column(db.Integer, default=0, doc='点赞数')
     dislike_count = db.Column(db.Integer, default=0, doc='点踩数')
 
-    # area = db.relationship("common.models.user.Area", backref='articles', uselist=False)
-    # user = db.relationship("common.models.user.User", foreign_keys=[user_id],
-    #                        primaryjoin=foreign(user_id) == remote(User.id),
-    #                        backref='articles', uselist=False)
-    # category = db.relationship('Category', backref='articles', uselist=False, doc='频道ID')
+    # area = db.relationship("Area", backref=db.backref('articles', lazy='dynamic'), uselist=False)
+    user = db.relationship("User", backref=db.backref('articles', lazy='dynamic'), uselist=False)
+    category = db.relationship('Category', backref='articles')
+    area = db.relationship('Area', backref='articles')
+    # category = db.relationship('Category', backref=db.backref('articles', lazy='dynamic'), uselist=False)
     # # 当前新闻的所有评论
-    # comments = db.relationship("Comment", lazy="dynamic")
-    # article_content = db.relationship("ArticleContent", backref='articles', uselist=False)
-
+    comments = db.relationship("Comment", lazy="dynamic")
+    article_content = db.relationship("ArticleContent",
+                                      backref=db.backref('articles', uselist=False), uselist=False)
 
 
 #
@@ -216,15 +211,16 @@ class Comment(db.Model):
     ctime = db.Column(db.DateTime, default=datetime.now, doc='创建时间')
     is_top = db.Column(db.Boolean, default=False, doc='是否置顶')
     status = db.Column(db.Integer, default=1, doc='评论状态')
+    user = db.relationship("User", backref="comments")
 
-    # user = db.relationship("User", backref='comments', uselist=False)
+    # user = db.relationship("User", backref=db.backref('comments', lazy='dynamic'), uselist=False)
     # article = db.relationship("Article", backref='comments', uselist=False)
     # like_user = db.relationship("User",
     #                             secondary='tb_like',
     #                             lazy='dynamic',
     #                             backref='like_comment')
     # 实现对评论的回复（其实就是自关联）
-    # parent = db.relationship("common.models.user.Comment", remote_side=id)  # 自关联
+    parent = db.relationship("Comment", remote_side=id)  # 自关联
 
 
 #

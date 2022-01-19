@@ -43,7 +43,7 @@ from flask_sqlalchemy import SQLAlchemy
 # # sqlalchemy 组件对象
 db = SQLAlchemy()
 
-from models.routing_db.routing_sqlalchemy import RoutingSQLAlchemy
+from .models.routing_db.routing_sqlalchemy import RoutingSQLAlchemy
 
 # mysql数据库操作对象
 # db = RoutingSQLAlchemy()
@@ -72,11 +72,12 @@ def register_extensions(app):
     # redis集群组件初始化
     global redis_cluster
     redis_cluster = RedisCluster(startup_nodes=app.config['CLUSTER_NODES'], decode_responses=True, )
+    # print(redis_cluster.info())
 
     # 数据迁移组件初始化
     Migrate(app, db)
     # 导入模型类
-    from models import user
+    from .models import user
 
     # 添加转换器
     from utils.converters import register_converters

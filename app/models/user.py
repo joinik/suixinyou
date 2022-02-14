@@ -21,8 +21,6 @@ class Area(db.Model):
     parent_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), nullable=True, doc='上级行政区')
 
     parent = db.relationship("Area", backref=db.backref("subs", lazy='dynamic'), remote_side=[id])
-    # parent = db.relationship("common.models.user.Area", remote_side=[id],
-    #                          backref=db.backref('subs', remote_side='{}.id'.format("tb_area")))  # 自关联
 
     def to_dict(self):
         return {
@@ -43,6 +41,7 @@ class User(db.Model):
     name = db.Column(db.String(20), unique=True, doc='昵称')
     mobile = db.Column(db.String(11), unique=True, nullable=False, doc='手机号')
     profile_photo = db.Column(db.String(256), doc='用户头像')
+    is_admin = db.Column(db.Boolean, default=False, doc='是否为管理员')
     last_login = db.Column(db.DateTime, default=datetime.now, doc='最后登录的时间')
     create_time = db.Column(db.DateTime, default=datetime.now, doc='注册时间')
     introduction = db.Column(db.String(128), doc='简介')
@@ -51,8 +50,8 @@ class User(db.Model):
     dianzan_num = db.Column(db.Integer, default=0, doc='获赞总数')
     travel_note_num = db.Column(db.Integer, default=0, doc='游记总数')
     dianliang_area_num = db.Column(db.Integer, default=0, doc='点亮地区数')
-    last_address_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), doc='用户上次位置')
-    last_address = db.relationship("Area", backref=db.backref('users', uselist=False), uselist=False)
+    last_area_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), doc='用户上次位置')
+    last_area = db.relationship("Area", backref=db.backref('users', uselist=False), uselist=False)
 
 
     def to_dict(self):
@@ -66,7 +65,8 @@ class User(db.Model):
             'travel_note_count': self.travel_note_num,
             'dianliang_area_count': self.dianliang_area_num,
             'business': self.business,
-            'last_address': self.last_address.area_name if self.last_address else None,
+            'last_address': self.last_area.area_name if self.last_area else None,
+            # 'like_comments': self.like_comments.
         }
 
 
@@ -74,7 +74,6 @@ class Address(db.Model):
     """地址表"""
 
     __tablename__ = "tb_address"
-
     __table_args__ = {"extend_existing": True}
 
     id = db.Column(db.Integer, primary_key=True, doc='地址ID')
@@ -90,7 +89,6 @@ class UserProfile(db.Model):
     """用户资料表"""
     __tablename__ = 'user_profile'
     __table_args__ = {"extend_existing": True}
-    # __table_args__ = {"useexisting": True}
 
     user_id = db.Column(db.Integer, db.ForeignKey("user_basic.id"), primary_key=True, doc='用户ID')
     email = db.Column(db.String(20), doc='邮箱')
@@ -102,7 +100,6 @@ class UserProfile(db.Model):
         default="MAN"
     )
     age = db.Column(db.Integer, doc='年龄')
-    is_admin = db.Column(db.Boolean, default=False, doc='是否为管理员')
     default_address_id = db.Column(db.Integer, db.ForeignKey("tb_address.id"), nullable=True, doc='用户常住地址')
     default_address = db.relationship("Address", backref=db.backref('users_profile', uselist=False), uselist=False)
     user_basic = db.relationship("User", backref=db.backref('user_profile', uselist=False), uselist=False)
@@ -130,8 +127,6 @@ class Category(db.Model):
     id_deleted = db.Column(db.Boolean, default=False, doc='逻辑删除')
 
 
-#
-#
 
 
 class Article(db.Model):
@@ -200,14 +195,14 @@ class Comment(db.Model):
         FAILED = 2  # 审核失败
         DELETED = 3  # 已删除
 
-    id = db.Column(db.Integer, primary_key=True, doc='评论ID')
-    user_id = db.Column(db.Integer, db.ForeignKey("user_basic.id"), doc='用户ID')
-    article_id = db.Column(db.Integer, db.ForeignKey("article_basic.id"), doc='文章ID')
-    parent_id = db.Column(db.Integer, db.ForeignKey("article_comment.id"), doc='父评论id')
+    comment_id = db.Column(db.Integer, primary_key=True, doc='评论ID')
+    user_id = db.Column(db.Integer, db.ForeignKey("user_basic.id"),nullable=False, doc='用户ID')
+    article_id = db.Column(db.Integer, db.ForeignKey("article_basic.id"),nullable=False, doc='文章ID')
+    parent_id = db.Column(db.Integer, db.ForeignKey("article_comment.comment_id"), doc='父评论id')
 
     like_count = db.Column(db.Integer, default=0, doc='点赞数')
     reply_count = db.Column(db.Integer, default=0, doc='回复数')
-    content = db.Column(db.String(200), doc='评论内容')
+    content = db.Column(db.String(200), nullable=False, doc='评论内容')
     ctime = db.Column(db.DateTime, default=datetime.now, doc='创建时间')
     is_top = db.Column(db.Boolean, default=False, doc='是否置顶')
     status = db.Column(db.Integer, default=1, doc='评论状态')
@@ -220,7 +215,7 @@ class Comment(db.Model):
     #                             lazy='dynamic',
     #                             backref='like_comment')
     # 实现对评论的回复（其实就是自关联）
-    parent = db.relationship("Comment", remote_side=id)  # 自关联
+    parent = db.relationship("Comment", remote_side=comment_id)  # 自关联
 
 
 #
@@ -228,17 +223,26 @@ class LikeComment(db.Model):
     """点赞表"""
     __tablename__ = 'tb_like'
     __table_args__ = {"extend_existing": True}
-
-    # __table_args__ = {'keep_existing': True}
-    id = db.Column("like_id", db.Integer, primary_key=True, doc='点赞ID')
-    user_id = db.Column(db.Integer, db.ForeignKey("user_basic.id"), doc='用户ID')
+    id = db.Column(db.Integer, primary_key=True, doc='点赞id')
+    liker_id = db.Column(db.Integer, db.ForeignKey("user_basic.id"), doc='点赞用户ID')
     article_id = db.Column(db.Integer, db.ForeignKey("article_basic.id"), doc='文章ID')
-    comment_id = db.Column(db.Integer, db.ForeignKey("article_comment.id"), doc='评论ID')
+    comment_id = db.Column(db.Integer, db.ForeignKey("article_comment.comment_id"), doc='评论ID')
+    liked_id = db.Column(db.Integer, db.ForeignKey("user_basic.id"), doc='被点赞用户ID')
+    relation = db.Column(db.Integer, default=1, doc='关系，0-取消，1-点赞')
+    ctime = db.Column(db.DateTime, default=datetime.now, doc='创建时间')
+    utime = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)  # 记录的更新时间
 
     # 一对一关系 uselist = False 返回一个对象，反之一个对象列表
-    # user = db.relationship(User, backref='like_comments', uselist=False)
-    # article = db.relationship(Article, backref='like_comments', uselist=False)
-    # comment = db.relationship(Comment, backref=db.backref('like_comments', lazy='dynamic'), lazy='dynamic')
+    # 查看用户点赞的情况
+    liker = db.relationship(User, backref=db.backref('like_lists', lazy='dynamic'),
+                            foreign_keys=[liker_id],
+                           uselist=False)
+    # # 查看用户有谁对他点赞
+    liked = db.relationship(User, backref=db.backref('likers', lazy='dynamic'),
+                            foreign_keys=[liked_id],
+                           uselist=False)
+    article = db.relationship(Article, foreign_keys=[article_id], backref=db.backref('like_lists', lazy='dynamic'), uselist=False)
+    comment = db.relationship(Comment, foreign_keys=[comment_id], backref=db.backref('like_lists', lazy='dynamic'), uselist=False)
 
 
 class DisLikeComment(db.Model):
@@ -249,7 +253,7 @@ class DisLikeComment(db.Model):
     id = db.Column(db.Integer, primary_key=True, doc='点踩ID')
     user_id = db.Column(db.Integer, db.ForeignKey("user_basic.id"), doc='用户ID')
     article_id = db.Column(db.Integer, db.ForeignKey("article_basic.id"), doc='文章ID')
-    comment_id = db.Column(db.Integer, db.ForeignKey("article_comment.id"), doc='评论ID')
+    comment_id = db.Column(db.Integer, db.ForeignKey("article_comment.comment_id"), doc='评论ID')
     # 一对一关系 uselist = False 返回一个对象，反之一个对象列表
     # user = db.relationship(User, backref=db.backref('dislike_comments'), uselist=False)
     # article = db.relationship(Article, backref=db.backref('dislike_comments'), uselist=False)

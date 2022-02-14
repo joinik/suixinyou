@@ -21,7 +21,10 @@ user_api.representation('application/json')(output_json)
 # 3.添加类视图
 user_api.add_resource(SMSCodeResource, '/sms/codes/<mob:mobile>')
 # user_api.add_resource(UsernameResource, '/usernames/<uname:username>')
+# 手机号方式登录
 user_api.add_resource(LoginResource, '/authorizations')
+# 微信登录
+# user_api.add_resource(LoginResource, '/authorizations')
 
 # 个人信息
 user_api.add_resource(CurrentUserResource, '/user')

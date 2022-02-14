@@ -1,5 +1,7 @@
+import json
 from datetime import datetime, timedelta
 
+import requests
 from flask import current_app, g
 from flask_restful import Resource
 import random
@@ -14,7 +16,6 @@ from utils.parser import mobile_type, username_type, pwd_type
 
 from app.models.user import User, UserProfile
 from utils.jwt_util import generate_jwt
-
 
 from common.utils.jwt_util import _generate_tokens
 
@@ -99,29 +100,45 @@ class MobileResource(Resource):
 class LoginResource(Resource):
     """注册"""
 
+    def get_openid(self,user_code):
+        result = requests.get(
+            'https://api.weixin.qq.com/sns/jscode2session?appid=wx8a83105e78daedfa&secret=7785ce2d9b7f4b1314c4129b774c7027&js_code={}&grant_type=authorization_code'.format(
+                user_code))
+        return json.loads(result.text)
+
     def post(self):
         # 获取参数
         parser = RequestParser()
-        parser.add_argument('mobile', required=True, location='json', type=mobile_type)
-        parser.add_argument('code', required=True, location='json', type=regex(r'^\d{6}$'), help='手机验证码错误')
-        parser.add_argument('allow', required=True, location='json', type=str)
+        parser.add_argument('mobile', location='json', type=mobile_type)
+        parser.add_argument('vcode', location='json', type=regex(r'^\d{6}$'), help='手机验证码错误')
+        parser.add_argument('allow', location='json', type=str)
+        parser.add_argument("wxcode", location="json", type=str)
 
         args = parser.parse_args()
         mobile = args.mobile
-        code = args.code
-        if args.allow !='true':
+        vcode = args.vcode
+        wxcode = args.wxcode
+
+        # 微信方式登录
+        if wxcode:
+            # 调用微信登录 换取凭证
+            req_info = self.get_openid(user_code=wxcode)
+            print(req_info)
+            input("微信接口返回的数据")
+
+        if args.allow != 'true':
             return {'message': 'Invalid allow', 'data': None}, 400
 
-
         # 校验短信验证码
-        key = 'app:code:{}'.format(mobile)
-        real_code = redis_cluster.get(key)
-        if not real_code or real_code != code:
-            return {'message': 'Invalid Code', 'data': None}, 400
+        # key = 'app:code:{}'.format(mobile)
+        # real_code = redis_cluster.get(key)
+        # if not real_code or real_code != vcode:
+        #     return {'message': 'Invalid Code', 'data': None}, 400
 
         # 存入数据库
         # print('查询数据库')
         user = User.query.options(load_only(User.id)).filter(User.mobile == mobile).first()
+        # print(user)
         # print('查询结束')
         if user:
             user.last_login = datetime.now()
@@ -133,7 +150,6 @@ class LoginResource(Resource):
             db.session.flush()
             print("用户的id", user.id)
 
-
             userprofile = UserProfile(user_id=user.id)
             db.session.add(userprofile)
             db.session.commit()
@@ -141,7 +157,6 @@ class LoginResource(Resource):
         # 存入数据库
         db.session.add(user)
         db.session.commit()
-
 
         # 生成jwt
         token, refresh_token = _generate_tokens(user.id)
@@ -153,6 +168,7 @@ class LoginResource(Resource):
             return {'token': token}, 201
         else:
             return {'message': "Invalid refreshToken", 'data': None}, 403
+
 
 """
 获取用户信息
@@ -178,5 +194,3 @@ Authorization    用户token
 }
 
 """
-
-

@@ -6,6 +6,7 @@ import sys
 
 
 # 将common路径加入模块查询路径
+from flask_cors import CORS
 from flask_migrate import Migrate
 from redis.sentinel import Sentinel
 from rediscluster import RedisCluster
@@ -24,6 +25,13 @@ def create_flask_app(type):
 
     # 创建flask应用
     app = Flask(__name__)
+    # 配置跨域
+    CORS(app, supports_credentials=True)
+
+    # 配置代理
+    # from werkzeug.middleware.proxy_fix import ProxyFix
+    # app.wsgi_app = ProxyFix(app.wsgi_app, num_proxies=1)
+
     # 根据类型加载配置子类
     config_class = config_dict[type]
 
@@ -93,9 +101,11 @@ def register_bp(app:Flask):
     from app.resource.user import user_bp # 进行局部导入，避免组件没有初始化完成
     from app.resource.article import article_bp
     from app.resource.area import area_bp
+    from app.resource.comment import comment_bp
     app.register_blueprint(user_bp)
     app.register_blueprint(article_bp)
     app.register_blueprint(area_bp)
+    app.register_blueprint(comment_bp)
 
 
 

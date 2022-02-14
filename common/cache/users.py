@@ -42,11 +42,9 @@ class UserCache:
                 return data
 
         else:  # 如果没有, 再从数据库中读取数据
-
             # 查询数据库
             user = User.query.options(
-                load_only(User.id, User.name, User.profile_photo, User.introduction, User.travel_note_num,
-                          User.dianzan_num, User.dianliang_area_num, User.business, User.last_address.area_name)).filter(User.id == self.userid).first()
+                load_only(User.id)).filter(User.id == self.userid).first()
 
             if user:  # 如果数据库有, 将数据回填到缓存中, 然后返回数据
 

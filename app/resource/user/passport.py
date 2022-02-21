@@ -102,7 +102,7 @@ class LoginResource(Resource):
 
     def get_openid(self,user_code):
         result = requests.get(
-            'https://api.weixin.qq.com/sns/jscode2session?appid=wx8a83105e78daedfa&secret=7785ce2d9b7f4b1314c4129b774c7027&js_code={}&grant_type=authorization_code'.format(
+            'https://api.weixin.qq.com/sns/jscode2session?appid=&secret=&js_code={}&grant_type=authorization_code'.format(
                 user_code))
         return json.loads(result.text)
 

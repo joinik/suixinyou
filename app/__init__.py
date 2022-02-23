@@ -85,7 +85,7 @@ def register_extensions(app):
     # 数据迁移组件初始化
     Migrate(app, db)
     # 导入模型类
-    from .models import user
+    from .models import user, area, weather
 
     # 添加转换器
     from utils.converters import register_converters

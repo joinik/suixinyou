@@ -1,12 +1,83 @@
+from datetime import datetime
+
 from flask import g
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 from sqlalchemy.orm import load_only
 
 from app import db
-from app.models.user import Article, ArticleContent, User, Area, LikeComment
+from app.models.article import Article, ArticleContent, Category
+from app.models.comment import LikeComment, DisLikeComment
+from utils.constants import HOME_PRE_PAGE
 
-from common.utils.decorators import login_required
+from utils.decorators import login_required
+
+
+class CategoryResource(Resource):
+    """分类主类"""
+
+    def get(self):
+        # 数据库查询获取所有分类
+        cat_list = Category.query.options(load_only(Category.id)).filter(Category.is_deleted == 0).all()
+
+        # 组装分类结构
+        cat_rest = [{"id": item.id, "name": item.cate_name} for item in cat_list]
+
+        # 返回响应
+        return {"message": "OK", "data": cat_rest}
+
+
+class CategoryDetailResource(Resource):
+    """获取分类下的所有文章"""
+
+    def get(self):
+        # 根据分类id 查询分类的所有文章
+        parser = RequestParser()
+        parser.add_argument("cate_id", required=True, location='args', type=int)
+        parser.add_argument("timestamp", required=True, location='args', type=int)
+        args = parser.parse_args()
+
+        # 获取参数
+        cate_id = args.cate_id
+        timestamp = args.timestamp
+
+        # 转换时间戳
+        date = datetime.fromtimestamp(timestamp * 0.001)
+
+        if timestamp == 0:
+            rest = Article.query.filter(Article.category_id == cate_id, Article.status == Article.STATUS.APPROVED,
+                                        ).order_by(
+                Article.ctime.desc()).limit(HOME_PRE_PAGE).all()
+
+        else:
+            # 查询数据
+            rest = db.session.query(Article.id, Article.title, Article.user_id, Article.ctime, Article.user,
+                                    Article.area,
+                                    Article.comment_count, Article.like_count, Article.dislike_count,
+                                    ).filter(Article.category_id == cate_id, Article.status == Article.STATUS.APPROVED,
+                                             Article.ctime < date).order_by(
+                Article.ctime.desc()).limit(HOME_PRE_PAGE).all()
+
+        print("分类结果", rest)
+        data = [
+            {"art_id": item.id,
+             "title": item.title,
+             "aut_id": item.user_id,
+             "aut_name": item.user.name,
+             "pubdate": item.ctime.isoformat(),
+             "comment_count": item.comment_count,
+             "like_count": item.like_count,
+             "dislike_count": item.dislike_count,
+             "area_id": item.area_id,
+             "area_name": item.area.area_name
+             }
+            for item in rest
+        ]
+
+        pre_timestamp = int(rest[-1].ctime.timestamp() * 1000) if data else 0
+        # 返回数据
+        return {'results': data, 'pre_timestamp': pre_timestamp}
+
 
 """
 获取游记信息
@@ -52,7 +123,7 @@ class ArticleDetailResource(Resource):
         # 查询基础数据
 
         data = Article.query.options(load_only(Article.id)). \
-            filter(Article.id == article_id, Article.status == 2).first()
+            filter(Article.id == article_id, Article.status == Article.STATUS.APPROVED).first()
         # print(data)
         # input("等待")
         if not data:
@@ -60,6 +131,7 @@ class ArticleDetailResource(Resource):
 
         # 序列化
         article_dict = {
+            'area_id': data.area.id,
             'area_name': data.area.area_name,
             'art_id': data.id,
             'title': data.title,
@@ -101,7 +173,7 @@ class ArticleDetailResource(Resource):
         db.session.add(data)
         db.session.commit()
 
-        return {'article': data.id, 'title': data.title}, 201
+        return {'article': data.id, 'title': data.title, "uptime": data.utime.isoformat()}, 201
 
 
 class CreateArticleResource(Resource):
@@ -131,13 +203,15 @@ class CreateArticleResource(Resource):
             db.session.add(article)
             # 先执行插入插入操作， 才能获取article 的id
             db.session.flush()
-            # db.session.commit()
+
+            article.user.travel_note_num += 1
+
             print('存储文章内容')
-            # article_id = db.session.query(Article).order_by(Article.ctime.desc()).all()[0]
+
             art_content = ArticleContent(article_id=article.id, content=content)
-            db.session.add(art_content)
+            db.session.add(art_content, article)
             db.session.commit()
-            return {'article': article.id, 'title': article.title, 'time': article.ctime}, 201
+            return {'article': article.id, 'title': article.title, 'time': article.ctime.isoformat()}, 201
 
         except Exception as e:
             db.session.rollback()
@@ -179,7 +253,7 @@ class LikeArticleResource(Resource):
                 like_model = LikeComment(liker_id=g.user_id, article_id=art_id)
                 db.session.add(like_model)
                 db.session.flush()
-                like_model.article.like_count +=1
+                like_model.article.like_count += 1
             else:
                 # 根据数据库记录的 判断是点赞还是取消
                 if like_model.relation == 0:
@@ -192,7 +266,7 @@ class LikeArticleResource(Resource):
 
             db.session.add(like_model)
             db.session.commit()
-            return {'liker_id': g.user_id, 'art_id': art_id}, 201
+            return {'liker_id': g.user_id, 'art_id': art_id, 'time': like_model.utime.isoformat()}, 201
 
         except Exception as e:
             print("点赞游记操作失败， ")
@@ -212,7 +286,6 @@ class LikeUserResource(Resource):
         args = parser.parse_args()
         user_id = args.user_id
 
-
         try:
             # 进行 用户点赞查询，
             # 查询到，则修改为取消点赞， 反之添加点赞
@@ -223,7 +296,7 @@ class LikeUserResource(Resource):
                 like_model = LikeComment(liker_id=g.user_id, liked_id=user_id)
                 db.session.add(like_model)
                 db.session.flush()
-                like_model.liked.dianzan_num +=1
+                like_model.liked.dianzan_num += 1
 
             else:
                 # 判断是点赞还是取消
@@ -236,7 +309,7 @@ class LikeUserResource(Resource):
 
             db.session.add(like_model)
             db.session.commit()
-            return {'liker_id': g.user_id, 'liked_id': user_id}, 201
+            return {'liker_id': g.user_id, 'liked_id': user_id, 'time': like_model.utime.isoformat()}, 201
 
         except Exception as e:
             print("点赞用户操作失败， ")
@@ -256,8 +329,6 @@ class LikeCommentResource(Resource):
         args = parser.parse_args()
         comment_id = args.comment_id
 
-
-
         try:
             # 进行 评论点赞查询，
             # 查询到，则修改为取消点赞， 反之添加点赞
@@ -270,7 +341,7 @@ class LikeCommentResource(Resource):
                 db.session.add(like_model)
                 db.session.flush()
 
-                like_model.comment.like_count +=1
+                like_model.comment.like_count += 1
 
             else:
                 # 判断是点赞还是取消
@@ -284,13 +355,94 @@ class LikeCommentResource(Resource):
             db.session.add(like_model)
             db.session.commit()
 
-            return {'liker_id': g.user_id, 'comment_id': comment_id}, 201
+            return {'liker_id': g.user_id, 'comment_id': comment_id, 'time': like_model.utime.isoformat()}, 201
 
         except Exception as e:
             print("点赞评论操作失败， ")
             print(e)
             db.session.rollback()
             return {"message": '操作失败！', 'data': None}, 400
+
+
+class DisLikeArticleResource(Resource):
+    """点踩游记 or 评论 主类"""
+    method_decorators = [login_required]
+
+    def post(self):
+        parser = RequestParser()
+        parser.add_argument('art_id', location='json', type=int)
+        parser.add_argument('comment_id', location='json', type=int)
+        args = parser.parse_args()
+        art_id = args.art_id
+        comment_id = args.comment_id
+
+        if (not art_id) and (not comment_id):
+            return {"message": 'Invalid Access！', 'data': None}, 400
+
+        if art_id:
+            try:
+                # 进行 游记点踩查询，
+                # 查询到，则修改为取消点踩， 反之添加点踩
+
+                like_model = DisLikeComment.query.options(load_only(DisLikeComment.id)). \
+                    filter(DisLikeComment.disliker_id == g.user_id, DisLikeComment.article_id == art_id).first()
+                if not like_model:
+                    like_model = DisLikeComment(disliker_id=g.user_id, article_id=art_id)
+                    db.session.add(like_model)
+                    db.session.flush()
+                    like_model.article.dislike_count += 1
+                else:
+                    # 根据数据库记录的 判断是点赞还是取消
+                    if like_model.relation == 0:
+                        like_model.relation = 1
+                        like_model.article.dislike_count += 1
+
+                    else:
+                        like_model.relation = 0
+                        like_model.article.dislike_count -= 1
+
+                db.session.add(like_model)
+                db.session.commit()
+                return {'disliker_id': g.user_id, 'art_id': art_id, 'time': like_model.utime.isoformat()}, 201
+
+            except Exception as e:
+                print("点踩游记操作失败， ")
+                print(e)
+                db.session.rollback()
+                return {"message": '操作失败！', 'data': None}, 400
+
+        elif comment_id:
+            try:
+                # 进行 评论点踩查询，
+                # 查询到，则修改为取消点踩， 反之添加点踩
+
+                like_model = DisLikeComment.query.options(load_only(DisLikeComment.id)). \
+                    filter(DisLikeComment.disliker_id == g.user_id, DisLikeComment.comment_id == comment_id).first()
+                if not like_model:
+                    like_model = DisLikeComment(disliker_id=g.user_id, comment_id=comment_id)
+                    db.session.add(like_model)
+                    db.session.flush()
+                    like_model.article.dislike_count += 1
+                else:
+                    # 根据数据库记录的 判断是点赞还是取消
+                    if like_model.relation == 0:
+                        like_model.relation = 1
+                        like_model.article.dislike_count += 1
+
+                    else:
+                        like_model.relation = 0
+                        like_model.article.dislike_count -= 1
+
+                db.session.add(like_model)
+                db.session.commit()
+                return {'disliker_id': g.user_id, 'comment_id': comment_id, 'time': like_model.utime.isoformat()}, 201
+
+            except Exception as e:
+                print("点踩游记操作失败， ")
+                print(e)
+                db.session.rollback()
+                return {"message": '操作失败！', 'data': None}, 400
+
 
 
 

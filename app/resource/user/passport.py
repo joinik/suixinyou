@@ -15,7 +15,6 @@ from celery_tasks.sms.tasks import celery_send_sms_code
 from utils.parser import mobile_type, username_type, pwd_type
 
 from app.models.user import User, UserProfile
-from utils.jwt_util import generate_jwt
 
 from common.utils.jwt_util import _generate_tokens
 
@@ -83,15 +82,14 @@ class MobileResource(Resource):
 
 后端：
     接收请求：接收json数据
-    路由：    post '/register/'
+    路由：    post 'app/authorizations'
     业务逻辑； 验证数据，保存到数据库
     响应数据： json格式
         {
           "message": "ok",
           "data": {
             "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI",
-            "userid": 1,
-            "username": "xxssls01"    
+            "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGci" 
           }
         }
 """
@@ -102,7 +100,7 @@ class LoginResource(Resource):
 
     def get_openid(self,user_code):
         result = requests.get(
-            'https://api.weixin.qq.com/sns/jscode2session?appid=wx8a83105e78daedfa&secret=7785ce2d9b7f4b1314c4129b774c7027&js_code={}&grant_type=authorization_code'.format(
+            'https://api.weixin.qq.com/sns/jscode2session?appid=&secret=&js_code={}&grant_type=authorization_code'.format(
                 user_code))
         return json.loads(result.text)
 
@@ -111,6 +109,7 @@ class LoginResource(Resource):
         parser = RequestParser()
         parser.add_argument('mobile', location='json', type=mobile_type)
         parser.add_argument('vcode', location='json', type=regex(r'^\d{6}$'), help='手机验证码错误')
+        parser.add_argument('nick_name', location='json', type=regex(r'\S{3,10}'), help="昵称格式错误")
         parser.add_argument('allow', location='json', type=str)
         parser.add_argument("wxcode", location="json", type=str)
 
@@ -118,7 +117,8 @@ class LoginResource(Resource):
         mobile = args.mobile
         vcode = args.vcode
         wxcode = args.wxcode
-
+        nick_name = args.nick_name
+        print("用户昵称,",nick_name)
         # 微信方式登录
         if wxcode:
             # 调用微信登录 换取凭证
@@ -144,7 +144,7 @@ class LoginResource(Resource):
             user.last_login = datetime.now()
         else:
             print("数据库插入用户数据")
-            user = User(mobile=mobile, name=mobile, last_login=datetime.now())
+            user = User(mobile=mobile, name=nick_name, last_login=datetime.now())
             db.session.add(user)
             # 先插入数据，才能拿到user的id
             db.session.flush()

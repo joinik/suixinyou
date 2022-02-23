@@ -4,7 +4,7 @@ from flask_restful.reqparse import RequestParser
 from sqlalchemy.orm import load_only
 
 from app import db, redis_cluster
-from app.models.user import Article, ArticleContent, User, Area
+from app.models.area import Area
 
 from common.utils.decorators import login_required
 
@@ -42,9 +42,8 @@ class AreaProvinceResource(Resource):
                 # input("等待")
 
                 # 序列化数据
-                province_list = []
-                for item in province_model_list:
-                    province_list.append({"area_id": item.id, "area_name": item.area_name})
+                province_list = [{"area_id": item.id, "area_name": item.area_name, "area_code": item.city_code} for item in province_model_list]
+
 
             except Exception as e:
                 print("省份数据查询错误")
@@ -74,15 +73,13 @@ class SubsResource(Resource):
                 if len(sub_model_list) ==1:
                     sub_model_list = sub_model_list[0].subs.all()
 
-                subs = []
-                for item in sub_model_list:
-                    subs.append({"area_id": item.id, "area_name": item.area_name})
+                subs = [{"area_id": item.id, "area_name": item.area_name, "area_code": item.city_code} for item in sub_model_list]
 
 
             except Exception as e:
                 print("subs数据查询错误")
                 print(e)
-                return {'message': 'subs数据错误', "data": None}, 400
+                return {'message': 'sub地区数据错误', "data": None}, 400
 
             redis_cluster.set("sub_data_" + str(pk), subs, 3600)
             return {"sub_data": subs}

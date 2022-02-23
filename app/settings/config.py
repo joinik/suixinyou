@@ -39,10 +39,10 @@ class DefaultConfig:
     JWT_EXPIRE_HOURS = 2  # token 过期时间
 
     # 七牛云
-    QINIU_ACCESS_KEY = 'O3nKI30XIuSkJ-Xh22UuAeK6F5MqWwwy5y21F6Wd'
-    QINIU_SECRET_KEY = 'BzWlYs_9qY2PhF7GwdMWiGUDU5NU9aeGQo-eoUEn'
-    QINIU_BUCKET_NAME = 'suixinyou'
-    QINIU_DOMAIN = 'http://r56rupc0g.hn-bkt.clouddn.com/'
+    QINIU_ACCESS_KEY = '4-vVQInCM2SjXzkeEeI5sFA1ExaCuY0rCxnAb2JB'
+    QINIU_SECRET_KEY = '9QK46pawEesuxyIvn2wuo6G-X_oSMG6Cg5NQnekP'
+    QINIU_BUCKET_NAME = 'suixinyou1'
+    QINIU_DOMAIN = 'http://r7r21o73n.hn-bkt.clouddn.com/'
 
 
 config_dict = {

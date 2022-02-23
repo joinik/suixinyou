@@ -71,6 +71,13 @@ def id_number(value):
         raise ValueError('Invalid id number.')
 
 
+def action_parser(value):
+    """检查是do 还是 no"""
+    if re.match(r'do|no|all', value):
+        return value.lower()
+    else:
+        raise ValueError('Invalid action')
+
 
 def image_file(value):
     """

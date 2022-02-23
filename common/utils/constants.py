@@ -8,6 +8,7 @@ SMS_CODE_EXPIRE = 300  # 短信验证码有效期
 
 BASE_URL_PRIFIX = '/app'  # 基础URL的前缀
 
+HOME_PRE_PAGE = 20
 
 # 升级2: 将过期时间处理封装为类
 class BaseCacheTTL:

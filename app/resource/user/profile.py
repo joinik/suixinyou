@@ -170,7 +170,7 @@ class UserPhotoResource(Resource):
     def patch(self):
         """修改头像"""
         # 获取参数
-        userid = g.userid
+        userid = g.user_id
         parser = RequestParser()
         parser.add_argument('photo', required=True, type=image_file, location='files')
         args = parser.parse_args()

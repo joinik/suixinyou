@@ -6,11 +6,11 @@ from sqlalchemy.orm import load_only
 from utils.decorators import login_required
 
 from app import db
-from app.models.user import Comment
+from app.models.comment import Comment
 
 
 class CommentCreateResource(Resource):
-    method_decorators = {'put': [login_required], 'post': [login_required]}
+    method_decorators = [login_required]
 
     def post(self):
 
@@ -44,6 +44,10 @@ class CommentCreateResource(Resource):
             try:
                 comment_model = Comment(article_id=art_id, user_id=user_id, parent_id=parent_id, content=comment_text)
                 db.session.add(comment_model, parent_comment)
+                db.session.flush()
+
+                comment_model.article.comment_count +=1
+                db.session.add(comment_model)
                 db.session.commit()
                 return {"comment_id": comment_model.comment_id, "time": comment_model.ctime.isoformat()}, 201
 
@@ -57,9 +61,15 @@ class CommentCreateResource(Resource):
             try:
                 comment_model = Comment(article_id=art_id, user_id=user_id, content=comment_text)
                 db.session.add(comment_model)
+                db.session.flush()
+                comment_model.article.comment_count += 1
+                db.session.add(comment_model)
                 db.session.commit()
                 return {"comment_id": comment_model.comment_id, "time": comment_model.ctime.isoformat()}, 201
             except Exception as e:
                 db.session.rollback()
                 print("评论数据库创建失败", e)
                 return {'message': "comment fail", 'data': None}, 400
+
+
+

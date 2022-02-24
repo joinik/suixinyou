@@ -59,7 +59,6 @@ class TravelCardResource(Resource):
                 print(e)
                 return {"message": "以重复 添加", "data": None}, 401
 
-
         if not model_list:
             return {"message": "Invalid Access"}, 400
 
@@ -80,6 +79,10 @@ class TravelCardResource(Resource):
         parser.add_argument('action', location='args', type=action_parser)
 
         # 获取参数
+        # action = do 查询已完成的行程
+        # action = no 查询未完成的行程
+        # action = all 查询所有的行程
+
         args = parser.parse_args()
         action = args.action
         user_id = g.user_id
@@ -95,17 +98,13 @@ class TravelCardResource(Resource):
             else:
                 router_list = RouterCard.query.options(load_only(RouterCard.id)). \
                     filter(RouterCard.user_id == user_id).all()
+
         except Exception as e:
             print('行程 查询数据库', )
             print(e)
             return {"message": "系统繁忙，稍后再试", "data": None}, 401
         rest = [
-            {
-                "area_id": item.area_id,
-                "area": item.area.area_name,
-                "comp_time": item.utime.isoformat(),
-                "complete": item.complete
-            } for item in router_list
+            item.to_dict() for item in router_list
         ]
 
         return {"message": "OK", "data": rest}
@@ -121,7 +120,6 @@ class TravelCardResource(Resource):
         parser.add_argument('new_arrive_time', required=True, location='json', type=str)
         parser.add_argument('action', location='json', type=str)
 
-
         # 1.1 获取参数
         args = parser.parse_args()
         area_id = args.area_id
@@ -130,7 +128,6 @@ class TravelCardResource(Resource):
         new_arrive_time = args.new_arrive_time
         action = args.action
         user_id = g.user_id
-
 
         if action == 'do':
             try:
@@ -146,14 +143,13 @@ class TravelCardResource(Resource):
                 db.session.add(router_model)
                 db.session.commit()
 
-                return {"message": "OK", "data": None}
+                return {"message": "OK", "data": router_model.to_dict()}
 
 
             except Exception as e:
                 print('修改行程 数据库 失败')
                 print(e)
                 return {"message": "Invalid Access"}, 400
-
 
         # 2.修改行程计划为完成状态
         try:
@@ -169,11 +165,9 @@ class TravelCardResource(Resource):
             db.session.commit()
 
             # 3.返回响应
-            return {"message": "OK", "data": None}
+            return {"message": "OK", "data": router_model.to_dict()}
 
         except Exception as e:
             print("行程 数据库, 查询失败")
             print(e)
             return {"message": "Invalid Access"}, 400
-
-

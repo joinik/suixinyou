@@ -33,3 +33,8 @@ def async_weather(area_name):
     finally:
         loop.close()
 
+
+
+
+
+

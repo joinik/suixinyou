@@ -2,7 +2,7 @@
 
 from celery_tasks.main import celery_app
 
-from common.utils.sms.SendMessage import Sms
+from utils.sms.SendMessage import Sms
 
 @celery_app.task(name='celery_send_sms_code')
 def celery_send_sms_code(moblie,code):

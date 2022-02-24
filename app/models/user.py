@@ -28,7 +28,6 @@ class User(db.Model):
     last_area_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), doc='用户上次位置')
     last_area = db.relationship("Area", backref=db.backref('users', uselist=False), uselist=False)
 
-
     def to_dict(self):
         """模型转字典, 用于序列化处理"""
         return {
@@ -91,15 +90,20 @@ class UserProfile(db.Model, TimeBaseModel):
 
 
 class RouterCard(db.Model, TimeBaseModel):
-
     __tablename__ = "tb_router_card"
     id = db.Column(db.Integer, primary_key=True, doc='行程卡')
     user_id = db.Column(db.Integer, db.ForeignKey("user_basic.id"), doc='用户ID')
     arrive_time = db.Column(db.DateTime, doc='到达时间')
     area_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), doc='地址id')
     complete = db.Column(db.Boolean, default=False, doc='是否到达')
-    user = db.relationship("User",  backref=db.backref('router_card', lazy='dynamic'), uselist=False)
+    user = db.relationship("User", backref=db.backref('router_card', lazy='dynamic'), uselist=False)
     area = db.relationship("Area", backref='router_card', uselist=False)
 
-
-
+    def to_dict(self):
+        return {
+            "area_id": self.area_id,
+            "area": self.area.area_name,
+            "arrive_time": self.arrive_time.isoformat(),
+            "comp_time": self.utime.isoformat(),
+            "complete": self.complete
+        }

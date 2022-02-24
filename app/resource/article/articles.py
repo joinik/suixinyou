@@ -18,10 +18,18 @@ class CategoryResource(Resource):
 
     def get(self):
         # 数据库查询获取所有分类
-        cat_list = Category.query.options(load_only(Category.id)).filter(Category.is_deleted == 0).all()
+        # print("分类查询")
+        try:
+            cat_list = Category.query.options(load_only(Category.id)).filter(Category.is_deleted == 0).all()
+            # print(cat_list)
+        except Exception as e:
+            print('分类查询 失败')
+            print(e)
+            return {'message': "Access Violation", 'data': None}, 403
 
         # 组装分类结构
         cat_rest = [{"id": item.id, "name": item.cate_name} for item in cat_list]
+
 
         # 返回响应
         return {"message": "OK", "data": cat_rest}
@@ -44,19 +52,25 @@ class CategoryDetailResource(Resource):
         # 转换时间戳
         date = datetime.fromtimestamp(timestamp * 0.001)
 
-        if timestamp == 0:
-            rest = Article.query.filter(Article.category_id == cate_id, Article.status == Article.STATUS.APPROVED,
-                                        ).order_by(
-                Article.ctime.desc()).limit(HOME_PRE_PAGE).all()
+        try:
+            if timestamp == 0:
+                rest = Article.query.filter(Article.category_id == cate_id, Article.status == Article.STATUS.APPROVED,
+                                            ).order_by(
+                    Article.ctime.desc()).limit(HOME_PRE_PAGE).all()
 
-        else:
-            # 查询数据
-            rest = db.session.query(Article.id, Article.title, Article.user_id, Article.ctime, Article.user,
-                                    Article.area,
-                                    Article.comment_count, Article.like_count, Article.dislike_count,
-                                    ).filter(Article.category_id == cate_id, Article.status == Article.STATUS.APPROVED,
-                                             Article.ctime < date).order_by(
-                Article.ctime.desc()).limit(HOME_PRE_PAGE).all()
+            else:
+                # 查询数据
+                rest = db.session.query(Article.id, Article.title, Article.user_id, Article.ctime, Article.user,
+                                        Article.area,
+                                        Article.comment_count, Article.like_count, Article.dislike_count,
+                                        ).filter(Article.category_id == cate_id, Article.status == Article.STATUS.APPROVED,
+                                                 Article.ctime < date).order_by(
+                    Article.ctime.desc()).limit(HOME_PRE_PAGE).all()
+
+        except Exception as e:
+            print('查询分类下的文章')
+            print(e)
+            return {"message": "系统 升级中，稍后再试"}, 402
 
         print("分类结果", rest)
         data = [

@@ -41,13 +41,31 @@ class Article(db.Model, TimeBaseModel):
     # area = db.relationship("Area", backref=db.backref('articles', lazy='dynamic'), uselist=False)
     user = db.relationship("User", backref=db.backref('articles', lazy='dynamic'), uselist=False)
     category = db.relationship('Category', backref='articles')
-    area = db.relationship('Area', backref='articles')
+    area = db.relationship('Area', backref='articles', uselist=False)
     # category = db.relationship('Category', backref=db.backref('articles', lazy='dynamic'), uselist=False)
     # # 当前新闻的所有评论
     comments = db.relationship("Comment", backref=db.backref('article', uselist=False), lazy="dynamic")
     article_content = db.relationship("ArticleContent",
                                       backref=db.backref('articles', uselist=False), uselist=False)
 
+
+
+    def todict(self):
+        return {
+            'area_id': self.area.id,
+            'area_name': self.area.area_name,
+            'art_id': self.id,
+            'title': self.title,
+            'pubdate': self.ctime.isoformat(),
+            'update': self.utime.isoformat(),
+            'aut_id': self.user.id,
+            'aut_name': self.user.name,
+            'aut_photo': self.user.profile_photo,
+            'content': self.article_content.content,
+            'comment_count': self.comment_count,
+            'like_count': self.like_count,
+            'dislike_count': self.dislike_count
+        }
 
 
 class ArticleContent(db.Model):

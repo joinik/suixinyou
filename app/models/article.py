@@ -83,4 +83,26 @@ class ArticleContent(db.Model):
 
 
 
+class Special(db.Model):
+    """特色类"""
+
+    id = db.Column(db.Integer,primary_key=True,doc='特色主键')
+    spe_intr = db.Column(db.String(256), doc='当地介绍')
+    spe_cultural = db.Column(db.String(256), doc='文化特色')
+    spe_scenery = db.Column(db.String(256), doc='美丽景色')
+    spe_snack = db.Column(db.String(256),doc='特色小吃')
+    area_id = db.Column(db.Integer, db.ForeignKey('tb_area.id'), doc='地区ID')
+
+
+    def todict(self):
+        return {
+            "area_id": self.area_id,
+            "spe_intr": self.spe_intr,
+            "spe_cultural": self.spe_cultural,
+            "spe_scenery": self.spe_scenery,
+            "spe_snack": self.spe_snack
+        }
+
+
+
 

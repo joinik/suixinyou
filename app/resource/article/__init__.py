@@ -4,7 +4,7 @@ from flask_restful import Api
 from utils.constants import BASE_URL_PRIFIX
 from .articles import ArticleDetailResource, CreateArticleResource, \
     LikeArticleResource, LikeUserResource, LikeCommentResource, DisLikeArticleResource, CategoryResource, \
-    CategoryDetailResource
+    CategoryDetailResource, SpecialResource
 
 article_bp = Blueprint('articles', __name__, url_prefix=BASE_URL_PRIFIX)
 
@@ -26,5 +26,7 @@ article_api.add_resource(LikeArticleResource, '/articles/likes')
 article_api.add_resource(LikeUserResource, '/users/likes')
 article_api.add_resource(LikeCommentResource, '/comment/likes')
 article_api.add_resource(DisLikeArticleResource, '/articles/dislikes')
+article_api.add_resource(SpecialResource, '/special')
+
 
 

@@ -194,8 +194,6 @@ class WeatherResource(Resource):
             # area_model = Area.query.options(load_only(Area.id)). \
             #     filter(Area.area_name.like('%' + city + '%'), Area.id == Article.area_id).\
             #     group_by(Article.category_id).all()
-
-
             parser = RequestParser()
             parser.add_argument('city', location='args', type=str)
             args = parser.parse_args()

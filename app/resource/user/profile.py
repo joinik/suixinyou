@@ -118,7 +118,8 @@ class UserInfoResource(Resource):
         parser = RequestParser()
         parser.add_argument('name', required=True, location='json', type=username_type)
         parser.add_argument('intro', required=True, location='json', type=str)
-        parser.add_argument('email', required=True, location='json', type=email_type)
+        # parser.add_argument('email', required=True, location='json', type=email_type)
+        parser.add_argument('email', required=True, location='json')
         parser.add_argument('gender', required=True, location='json', type=str)
         parser.add_argument('age', required=True, location='json', type=int)
 

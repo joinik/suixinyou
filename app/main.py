@@ -15,15 +15,21 @@ from common.utils.req_weather import async_weather
 app = create_app('dev')
 
 
-@app.route('/app/ip', methods=["POST"])
+@app.route('/app/ip', methods=["GET"])
 def user_ip():
-    area_id = request.json.get("area_id")
-    area_name = request.json.get("area_name")
+    ip = request.remote_addr
+
+    #  通过ip 获取 地理位置
+    resp = httpx.get('https://restapi.amap.com/v5/ip?key=677f025efeda715a72a7837f85f576f9&type=4&ip={}'.format(ip))
+
+    resp = resp.json()
+    city = resp.get('city', '宿迁市')
+
 
     # 根据前端发送的 用户地址信息
     try:
         # 1. 数据库查询 用户城市的文章信息
-        area_model = Area.query.options(load_only(Area.id)).filter(Area.area_name.like('%' + area_name + '%')).first()
+        area_model = Area.query.options(load_only(Area.id)).filter(Area.area_name.like('%' + city + '%')).first()
     except Exception as e:
         print("地区查询 数据库，失败", )
         print(e)
@@ -43,11 +49,19 @@ def user_ip():
 
 @app.route('/')
 def route_map():
-    """定义根路由：获取所有路由规则"""
 
-    # user = LikeComment.query.options(load_only(LikeComment.id)).filter(LikeComment.id ==3).first()
-    # print(user.article.like_count)
-    cat = Category(cate_name="神秘")
-    db.session.add(cat)
-    db.session.commit()
-    return jsonify({rule.endpoint: rule.rule for rule in app.url_map.iter_rules()})
+    # 首页展示
+
+    cat_model = Category.query.options(load_only(Category.id)).filter(Category.is_deleted == 0).all()
+
+
+    rest = []
+    for item in cat_model:
+
+        art = [ item.todict()  for item in item.articles.limit(5).all()]
+        rest.append({item.cate_name: art})
+    # input('等待')
+
+
+
+    return jsonify({"message": "OK", "data":rest})

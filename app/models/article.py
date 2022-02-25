@@ -40,7 +40,7 @@ class Article(db.Model, TimeBaseModel):
 
     # area = db.relationship("Area", backref=db.backref('articles', lazy='dynamic'), uselist=False)
     user = db.relationship("User", backref=db.backref('articles', lazy='dynamic'), uselist=False)
-    category = db.relationship('Category', backref='articles')
+    category = db.relationship('Category', backref=db.backref('articles', lazy='dynamic'))
     area = db.relationship('Area', backref='articles', uselist=False)
     # category = db.relationship('Category', backref=db.backref('articles', lazy='dynamic'), uselist=False)
     # # 当前新闻的所有评论

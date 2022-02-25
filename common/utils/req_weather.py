@@ -4,6 +4,10 @@ import httpx
 from flask import jsonify
 
 
+
+
+
+
 def async_weather(area_name):
     async def request_weather(area_name):
         try:

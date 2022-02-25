@@ -24,6 +24,7 @@ class User(db.Model):
     business = db.Column(db.Integer, default=0, doc='认证，是否为商家，0不是，1-是')
     dianzan_num = db.Column(db.Integer, default=0, doc='获赞总数')
     travel_note_num = db.Column(db.Integer, default=0, doc='游记总数')
+    note_num = db.Column(db.Integer, default=0, doc='发帖总数')
     dianliang_area_num = db.Column(db.Integer, default=0, doc='点亮地区数')
     last_area_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), doc='用户上次位置')
     last_area = db.relationship("Area", backref=db.backref('users', uselist=False), uselist=False)
@@ -33,9 +34,11 @@ class User(db.Model):
         return {
             'id': self.id,
             'name': self.name,
+            'mobile': self.mobile,
             'photo': self.profile_photo,
             'intro': self.introduction,
             'dianzan_count': self.dianzan_num,
+            'note_num_count': self.note_num,
             'travel_note_count': self.travel_note_num,
             'dianliang_area_count': self.dianliang_area_num,
             'business': self.business,

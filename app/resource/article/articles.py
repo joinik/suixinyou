@@ -217,8 +217,10 @@ class CreateArticleResource(Resource):
             db.session.add(article)
             # 先执行插入插入操作， 才能获取article 的id
             db.session.flush()
-
-            article.user.travel_note_num += 1
+            if article.category.cate_name == '游记':
+                article.user.travel_note_num += 1
+            else:
+                article.user.note_num +=1
 
             print('存储文章内容')
 

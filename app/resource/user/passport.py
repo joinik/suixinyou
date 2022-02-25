@@ -11,6 +11,8 @@ from sqlalchemy.orm import load_only
 
 from app import db, redis_cluster
 from utils.constants import SMS_CODE_EXPIRE
+
+from app.models.area import Area
 from celery_tasks.sms.tasks import celery_send_sms_code
 from utils.parser import mobile_type, username_type, pwd_type
 
@@ -119,6 +121,8 @@ class LoginResource(Resource):
         wxcode = args.wxcode
         nick_name = args.nick_name
         print("用户昵称,",nick_name)
+
+
         # 微信方式登录
         if wxcode:
             # 调用微信登录 换取凭证
@@ -145,6 +149,20 @@ class LoginResource(Resource):
         else:
             print("数据库插入用户数据")
             user = User(mobile=mobile, name=nick_name, last_login=datetime.now())
+
+            city = g.city
+
+            try:
+                # 1. 数据库查询 用户城市的文章信息
+                area_model = Area.query.options(load_only(Area.id)).filter(
+                    Area.area_name.like('%' + city + '%')).first()
+            except Exception as e:
+                print("地区查询 数据库，失败", )
+                print(e)
+                return {"message": "Invalid Access", "data": None}, 401
+
+            user.last_area_id = area_model.id
+
             db.session.add(user)
             # 先插入数据，才能拿到user的id
             db.session.flush()

@@ -4,12 +4,13 @@ import json
 from sqlalchemy.orm import load_only
 
 from app import create_app, db
-from flask import jsonify, request
+from flask import jsonify, request, g
 import httpx
 
 # 创建web应用
 from app.models.area import Area
 from app.models.article import Category
+from common.utils.req_ip import req_area
 from common.utils.req_weather import async_weather
 
 app = create_app('dev')
@@ -17,15 +18,8 @@ app = create_app('dev')
 
 @app.route('/app/ip', methods=["GET"])
 def user_ip():
-    ip = request.remote_addr
 
-    #  通过ip 获取 地理位置
-    resp = httpx.get('https://restapi.amap.com/v5/ip?key=677f025efeda715a72a7837f85f576f9&type=4&ip={}'.format(ip))
-
-    resp = resp.json()
-    city = resp.get('city', '宿迁市')
-
-
+    city = g.city
     # 根据前端发送的 用户地址信息
     try:
         # 1. 数据库查询 用户城市的文章信息

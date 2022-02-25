@@ -5,11 +5,16 @@
 from flask import request, g
 from utils.jwt_util import verify_jwt
 
-
+from common.utils.req_ip import req_area
 
 
 def get_userinfo():
     """获取用户信息"""
+
+    # 根据 请求ip，查询物理ip地址
+    ip = request.remote_addr
+    city = req_area(ip)
+    g.city = city
 
     # 获取请求头中的token
     auth = request.headers.get('Authorization')

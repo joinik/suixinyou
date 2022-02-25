@@ -3,20 +3,21 @@ import asyncio
 import httpx
 from flask import jsonify
 
-
-
-
+from app import redis_cluster
 
 
 def async_weather(area_name):
     async def request_weather(area_name):
+
+
         try:
             async with httpx.AsyncClient() as client:
                 resp = await client.get("http://wthrcdn.etouch.cn/weather_mini?city={}".format(area_name))
                 assert resp.status_code == 200
                 print('天气返回响应')
                 html = resp.json()
-                # print(html)
+                print(type(html))
+                print(resp)
                 # input('等待》》》》')
                 return html
 

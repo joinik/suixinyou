@@ -144,21 +144,7 @@ class ArticleDetailResource(Resource):
             return {'message': "Access Violation", 'data': None}, 403
 
         # 序列化
-        article_dict = {
-            'area_id': data.area.id,
-            'area_name': data.area.area_name,
-            'art_id': data.id,
-            'title': data.title,
-            'pubdate': data.ctime.isoformat(),
-            'update': data.utime.isoformat(),
-            'aut_id': data.user.id,
-            'aut_name': data.user.name,
-            'aut_photo': data.user.profile_photo,
-            'content': data.article_content.content,
-            'comment_count': data.comment_count,
-            'like_count': data.like_count,
-            'dislike_count': data.dislike_count
-        }
+        article_dict = data.todict()
 
         # 返回数据
         return article_dict

@@ -1,15 +1,19 @@
+import json
 from datetime import datetime
 from functools import reduce
 
-from flask import g
+from flask import g, request
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
+from sqlalchemy import or_
 from sqlalchemy.orm import load_only
 
-from app import db
+from app import db, redis_cluster
+from app.models.area import Area
 from app.models.user import RouterCard
 from common.utils.decorators import login_required
 from common.utils.parser import action_parser
+from common.utils.req_weather import async_weather
 
 
 class TravelCardResource(Resource):
@@ -171,3 +175,109 @@ class TravelCardResource(Resource):
             print("行程 数据库, 查询失败")
             print(e)
             return {"message": "Invalid Access"}, 400
+
+
+
+class WeatherResource(Resource):
+
+    def get(self):
+
+
+
+
+        ip = request.remote_addr
+        city = g.city
+        # print(city)
+        # 根据前端发送的 用户地址信息
+        try:
+            # 1. 数据库查询 用户城市的文章信息
+            # area_model = Area.query.options(load_only(Area.id)). \
+            #     filter(Area.area_name.like('%' + city + '%'), Area.id == Article.area_id).\
+            #     group_by(Article.category_id).all()
+
+
+            parser = RequestParser()
+            parser.add_argument('city', location='args', type=str)
+            args = parser.parse_args()
+            # 获取请求参数
+            city1 = args.city
+            print('请求参数',city1)
+
+            if city1:
+                city = city1
+
+            area_model = Area.query.options(load_only(Area.id)). \
+                filter(or_(Area.area_name.like('%' + city + '%'),Area.id == city)).first()
+
+            if not area_model:
+                return {"message": "Invalid Access", "data": None}, 401
+
+        except Exception as e:
+            print("地区查询 数据库，失败", )
+            print(e)
+            return {"message": "Invalid Access", "data": None}, 401
+
+        print(area_model)
+        # input('等待')
+
+        area_article = []
+        # 1.1 数据序列化
+        gonggao = []  # 公告列表
+        huati = []  # 话题列表
+        qiuzhu = []  # 求助列表
+        huodong = []  # 活动列表
+        youji = []  # 游记列表
+        business = []  # 商家列表
+        for item in area_model.articles.all():
+            if item.category.cate_name == '公告' and item.status == 2:
+                if len(gonggao) == 10:
+                    continue
+                gonggao.append(item.todict())
+            elif item.category.cate_name == '话题' and item.status == 2:
+                if len(huati) == 10:
+                    continue
+                huati.append(item.todict())
+            elif item.category.cate_name == '求助' and item.status == 2:
+                if len(qiuzhu) == 10:
+                    continue
+                qiuzhu.append(item.todict())
+            elif item.category.cate_name == '活动' and item.status == 2:
+                if len(huodong) == 10:
+                    continue
+                huodong.append(item.todict())
+            elif item.category.cate_name == '游记' and item.status == 2:
+                if len(youji) == 10:
+                    continue
+                youji.append(item.todict())
+            elif item.category.cate_name == '商家' and item.status == 2:
+                if len(business) == 10:
+                    continue
+                business.append(item.todict())
+
+        area_article.append({'公告': gonggao})
+        area_article.append({'话题': huati})
+        area_article.append({'求助': qiuzhu})
+        area_article.append({'活动': huodong})
+        area_article.append({'游记': youji})
+        area_article.append({'商家': business})
+
+        # print("文章数据")
+        # print(area_article)
+        # 查询redis集群缓存
+        area_name = area_model.area_name
+        print('城市名字',area_name)
+        html = redis_cluster.get("weather_data_" + str(area_name))
+
+        # input('等待')
+        if not html:
+            print("weather 天气缓存")
+            # 2. 进行天气查询
+            html = async_weather(area_name)
+            # 进行天气数据缓存
+            print('进行天气数据缓存')
+            redis_cluster.set("weather_data_" + str(area_name), html, 3600 * 6)  # 有效期6小时
+        else:
+            html = eval(html)
+        return {'ip': ip, "message": "OK", "data": {"area_article": area_article, "weather": html}}
+
+

@@ -7,3 +7,5 @@ class TimeBaseModel:
 
     ctime = db.Column(db.DateTime, nullable=False, default=datetime.now)  # 记录的创建时间
     utime = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)  # 记录的更新时间
+
+

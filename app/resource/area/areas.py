@@ -58,7 +58,7 @@ class AreaProvinceResource(Resource):
 class SubsResource(Resource):
 
     def get(self, pk):
-
+        print('')
         # 查询redis集群缓存
         if redis_cluster.get("sub_data_" + str(pk)):
             print(">>>>>>>>>>>>subs缓存")

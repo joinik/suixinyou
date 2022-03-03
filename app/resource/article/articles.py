@@ -6,21 +6,15 @@ from flask_restful.reqparse import RequestParser
 from sqlalchemy.orm import load_only
 
 from app import db
-<<<<<<< HEAD
-=======
 from app.models.area import Area
->>>>>>> dev
 from app.models.article import Article, ArticleContent, Category, Special
 from app.models.comment import LikeComment, DisLikeComment
 from utils.constants import HOME_PRE_PAGE
 
 from utils.decorators import login_required
 
-<<<<<<< HEAD
-=======
 from app.models.user import User
 
->>>>>>> dev
 """分类主类"""
 
 
@@ -468,70 +462,6 @@ class DisLikeArticleResource(Resource):
                 return {"message": '操作失败！', 'data': None}, 400
 
 
-"""特色文章"""
-
-
-class SpecialResource(Resource):
-
-    def post(self):
-        """创建特色"""
-        parser = RequestParser()
-        parser.add_argument('spe_intr', required=True, location='json', type=str)
-        parser.add_argument('spe_cultural', required=True, location='json', type=str)
-        parser.add_argument('spe_scenery', required=True, location='json', type=str)
-        parser.add_argument('spe_snack', required=True, location='json', type=str)
-        parser.add_argument('area_id', required=True, location='json', type=int)
-        # 获取参数
-        args = parser.parse_args()
-        spe_intr = args.spe_intr
-        spe_cultural = args.spe_cultural
-        spe_scenery = args.spe_scenery
-        spe_snack = args.spe_snack
-        area_id = args.area_id
-
-        # 存入数据库
-        spe = Special(area_id=area_id, spe_intr=spe_intr, spe_cultural=spe_cultural, spe_scenery=spe_scenery,
-                      spe_snack=spe_snack)
-
-        try:
-            # 提交
-            db.session.add(spe)
-            db.session.commit()
-        except Exception as e:
-            print('特色，数据库，创建失败')
-            print(e)
-            db.session.rollback()
-            return {"message": '创建失败！', 'data': None}, 401
-
-        return {"message": "OK", "area_id": area_id, "special_id": spe.id}
-
-    def get(self):
-        parser = RequestParser()
-        parser.add_argument('area_id', required=True, location='args', type=int)
-        # 获取参数
-        args = parser.parse_args()
-        area_id = args.area_id
-
-        try:
-            # 数据库查询
-            spe_mod = Special.query.options(load_only(Special.id)).filter(Special.area_id == area_id).first()
-        except Exception as e:
-            print('特色 数据库查询失败')
-            print(e)
-            return {"message": '查询失败！', 'data': None}, 401
-
-        return {"message": "OK", "data": spe_mod.todict()}
-
-
-
-
-
-def auto_data():
-    """自动填充数据库"""
-
-    # 根据用户数据，进行操作
-
-
 
 def auto_data():
     """自动填充数据库"""
@@ -728,7 +658,7 @@ class SpecialResource(Resource):
         # 获取参数
         args = parser.parse_args()
         area_id = args.area_id
-        auto_data()
+        # auto_data()
 
 
         try:

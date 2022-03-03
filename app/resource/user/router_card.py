@@ -11,8 +11,13 @@ from sqlalchemy.orm import load_only
 from app import db, redis_cluster
 from app.models.area import Area
 from app.models.user import RouterCard
+from common.cache.weather import WeatherCache
 from common.utils.decorators import login_required
 from common.utils.parser import action_parser
+<<<<<<< HEAD
+=======
+from common.utils.req_ip import req_area
+>>>>>>> dev
 from common.utils.req_weather import async_weather
 
 
@@ -30,6 +35,8 @@ class TravelCardResource(Resource):
         # 获取参数
         data = args.data
         user_id = g.user_id
+        # print(data)
+
 
         ''' 对list格式的dict进行去重'''
 
@@ -38,6 +45,8 @@ class TravelCardResource(Resource):
             return reduce(run_function, [[], ] + data)
 
         data = remove_list_dict_duplicate(data)
+        # print(data)
+        # input('等待')
 
         # 模型类列表
         model_list = []
@@ -182,14 +191,25 @@ class WeatherResource(Resource):
 
     def get(self):
         ip = request.remote_addr
+<<<<<<< HEAD
         city = g.city
         # print(city)
         # 根据前端发送的 用户地址信息
+=======
+        city = req_area(ip)
+
+        # print(city)
+        # 根据前端发送的 用户地址信息
+
+        area_model = None
+
+>>>>>>> dev
         try:
             parser = RequestParser()
             parser.add_argument('city', location='args', type=str)
             args = parser.parse_args()
             # 获取请求参数
+<<<<<<< HEAD
             city1 = args.city
             print('请求参数',city1)
 
@@ -202,12 +222,38 @@ class WeatherResource(Resource):
 
             if not area_model:
                 return {"message": "Invalid Access", "data": None}, 401
+=======
+            city_code = args.city
+            print('请求参数',city_code)
+
+            if city_code:
+                weather_cache = WeatherCache(areaid=city_code).get(city_code=city_code)
+
+            else:
+                # 1. 数据库查询 用户城市的文章信息
+                area_model = Area.query.options(load_only(Area.id)). \
+                    filter(or_(Area.area_name.like('%' + city + '%'),Area.id == city)).first()
+
+                if not area_model:
+                    return {"message": "Invalid Access", "data": None}, 401
+
+                weather_cache = WeatherCache(areaid=area_model.id).get(area_model=area_model)
+
+            if not weather_cache:
+                return {'message': "Invalid Weather_area", 'data': None}, 400
+
+            return {'ip': ip, "area_id": area_model.id if area_model else city_code, "message": "OK",
+                    "data": weather_cache}
+
+
+>>>>>>> dev
 
         except Exception as e:
             print("地区查询 数据库，失败", )
             print(e)
             return {"message": "Invalid Access", "data": None}, 401
 
+<<<<<<< HEAD
         print(area_model)
         # input('等待')
 
@@ -271,5 +317,8 @@ class WeatherResource(Resource):
             html = eval(html)
             print('天气数据缓存')
         return {'ip': ip, "area_id": area_model.id, "message": "OK", "data": {"area_article": area_article, "weather": html}}
+=======
+
+>>>>>>> dev
 
 

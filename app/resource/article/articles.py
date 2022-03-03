@@ -6,12 +6,21 @@ from flask_restful.reqparse import RequestParser
 from sqlalchemy.orm import load_only
 
 from app import db
+<<<<<<< HEAD
+=======
+from app.models.area import Area
+>>>>>>> dev
 from app.models.article import Article, ArticleContent, Category, Special
 from app.models.comment import LikeComment, DisLikeComment
 from utils.constants import HOME_PRE_PAGE
 
 from utils.decorators import login_required
 
+<<<<<<< HEAD
+=======
+from app.models.user import User
+
+>>>>>>> dev
 """分类主类"""
 
 
@@ -521,6 +530,219 @@ def auto_data():
     """自动填充数据库"""
 
     # 根据用户数据，进行操作
+
+
+
+def auto_data():
+    """自动填充数据库"""
+
+
+    area_list = db.session.query(Area).filter(Area.parent_id == 0).all()
+    # print(area_list)
+    print(11111111111)
+
+    # print(area_list[33].subs.all()[0].area_name)
+
+    # 用户id list
+    user_list = [1,2,4]
+
+    # 分类id list
+    cate_list = [1,2,3,4,5,6]
+
+
+    for area in area_list:
+
+        sub_model_list = area.subs.all()
+        # 创建 澳门，香港，台湾 数据
+        if len(sub_model_list) == 0:
+            art_list = []
+            # 创建 澳门，香港，台湾 数据
+            for i in range(10):
+                art_list.append(Article(category_id=cate_list[0],
+                                    user_id=user_list[0], area_id=area.id,
+                                    title="测试数据-{}话题".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[1],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}求助".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[2],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}活动".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[3],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}公告".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[4],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}商家".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[5],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}游记".format(area.area_name)))
+
+            spe = Special(area_id=area.id, spe_intr="介绍%s---测试数据" % (area.area_name),
+                          spe_cultural="特色文化%s----测试数据" % (area.area_name),
+                          spe_scenery="特色美景%s----测试数据" % (area.area_name),
+                          spe_snack="特色小吃%s----测试数据" % (area.area_name))
+
+            db.session.add_all(art_list)
+            db.session.add(spe)
+            db.session.flush()
+            content = []
+            for article in art_list:
+                if article.category.cate_name == '游记':
+                    article.user.travel_note_num += 1
+                else:
+                    article.user.note_num += 1
+
+                content.append(ArticleContent(article_id=article.id, content="测试数据-{}".format(area.area_name)))
+                # input('循环文章')
+
+            db.session.add_all(content)
+            db.session.commit()
+            # input('存储到数据库，文章内容')
+            # 执行完跳过此循环
+            # print(area.area_name)
+            continue
+
+#
+        if len(sub_model_list) == 1:
+            # 判断只到 区级
+            # print(sub_model_list)
+            # input('等待')
+            sub_model_list = sub_model_list[0].subs.all()
+
+            if sub_model_list[0].area_name == '市辖区':
+                sub_model_list = sub_model_list[1:]
+
+        if sub_model_list[0].area_name == '市辖区':
+            sub_model_list = sub_model_list[1:]
+
+        # print(sub_model_list)
+        # input('等待')
+        for area in sub_model_list:
+
+            art_list = []
+            # print(area.area_name)
+            for i in range(10):
+                art_list.append(Article(category_id=cate_list[0],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}话题".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[1],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}求助".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[2],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}活动".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[3],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}公告".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[4],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}商家".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[5],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}游记".format(area.area_name)))
+
+            # 排除 已存在数据
+            if area.id == 951211:
+                continue
+
+            spe = Special(area_id=area.id, spe_intr="介绍%s---测试数据"%(area.area_name),
+                          spe_cultural="特色文化%s----测试数据"%(area.area_name), spe_scenery="特色美景%s----测试数据"%(area.area_name),
+                          spe_snack="特色小吃%s----测试数据"%(area.area_name))
+
+            db.session.add_all(art_list)
+            db.session.add(spe)
+            db.session.flush()
+            content = []
+            for article in art_list:
+                if article.category.cate_name == '游记':
+                    article.user.travel_note_num += 1
+                else:
+                    article.user.note_num += 1
+
+                content.append(ArticleContent(article_id=article.id, content="测试数据-{}".format(area.area_name)))
+
+            db.session.add_all(content)
+            db.session.commit()
+
+
+#     # for area in area_list[3,]:
+#     #     # print('所有的省份数据')
+#     #     for city in area.subs.all():
+#     #         # print('下一级 市')
+#     #         print(city)
+#     #         sub_model_list = city.subs.all()
+#     #         # print(sub_model_list)
+#     #         if len(sub_model_list) == 1:
+#     #             print()
+#     #             sub_model_list = sub_model_list[0].subs.all()
+#     #
+#     # for item in area_list[33].subs.all():
+#     #     print(item.area_name)
+
+
+
+
+
+
+
+"""特色文章"""
+
+
+class SpecialResource(Resource):
+
+    def post(self):
+        """创建特色"""
+        parser = RequestParser()
+        parser.add_argument('spe_intr', required=True, location='json', type=str)
+        parser.add_argument('spe_cultural', required=True, location='json', type=str)
+        parser.add_argument('spe_scenery', required=True, location='json', type=str)
+        parser.add_argument('spe_snack', required=True, location='json', type=str)
+        parser.add_argument('area_id', required=True, location='json', type=int)
+        # 获取参数
+        args = parser.parse_args()
+        spe_intr = args.spe_intr
+        spe_cultural = args.spe_cultural
+        spe_scenery = args.spe_scenery
+        spe_snack = args.spe_snack
+        area_id = args.area_id
+
+        # 存入数据库
+        spe = Special(area_id=area_id, spe_intr=spe_intr, spe_cultural=spe_cultural, spe_scenery=spe_scenery,
+                      spe_snack=spe_snack)
+
+        try:
+            # 提交
+            db.session.add(spe)
+            db.session.commit()
+        except Exception as e:
+            print('特色，数据库，创建失败')
+            print(e)
+            db.session.rollback()
+            return {"message": '创建失败！', 'data': None}, 401
+
+        return {"message": "OK", "area_id": area_id, "special_id": spe.id}
+
+    def get(self):
+        parser = RequestParser()
+        parser.add_argument('area_id', required=True, location='args', type=int)
+        # 获取参数
+        args = parser.parse_args()
+        area_id = args.area_id
+        auto_data()
+
+
+        try:
+            # 数据库查询
+            spe_mod = Special.query.options(load_only(Special.id)).filter(Special.area_id == area_id).first()
+        except Exception as e:
+            print('特色 数据库查询失败')
+            print(e)
+            return {"message": '查询失败！', 'data': None}, 401
+
+        return {"message": "OK", "data": spe_mod.todict()}
+
+
+
 
 
 

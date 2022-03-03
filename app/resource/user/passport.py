@@ -147,10 +147,20 @@ class LoginResource(Resource):
         if user:
             user.last_login = datetime.now()
         else:
-            print("数据库插入用户数据")
-            user = User(mobile=mobile, name=nick_name, last_login=datetime.now())
+            try:
+                # 进行用户名查询，存在，就不让存储数据了
+                if User.query.options(load_only(User.id)).filter(User.name == nick_name).first():
+                    return  {"message": "用户名重复", "data": None}, 400
 
-            city = g.city
+                print("数据库插入用户数据")
+                user = User(mobile=mobile, name=nick_name, last_login=datetime.now())
+
+                city = g.city
+            except Exception as e:
+                print("地区查询 数据库，失败", )
+                print(e)
+                return {"message": "Invalid Access", "data": None}, 401
+
 
             try:
                 # 1. 数据库查询 用户城市的文章信息

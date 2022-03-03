@@ -6,15 +6,19 @@ from flask_restful.reqparse import RequestParser
 from sqlalchemy.orm import load_only
 
 from app import db
-from app.models.article import Article, ArticleContent, Category
+from app.models.area import Area
+from app.models.article import Article, ArticleContent, Category, Special
 from app.models.comment import LikeComment, DisLikeComment
 from utils.constants import HOME_PRE_PAGE
 
 from utils.decorators import login_required
 
+from app.models.user import User
+
+"""分类主类"""
+
 
 class CategoryResource(Resource):
-    """分类主类"""
 
     def get(self):
         # 数据库查询获取所有分类
@@ -30,9 +34,8 @@ class CategoryResource(Resource):
         # 组装分类结构
         cat_rest = [{"id": item.id, "name": item.cate_name} for item in cat_list]
 
-
         # 返回响应
-        return {"message": "OK", "data": cat_rest}
+        return cat_rest
 
 
 class CategoryDetailResource(Resource):
@@ -63,7 +66,8 @@ class CategoryDetailResource(Resource):
                 rest = db.session.query(Article.id, Article.title, Article.user_id, Article.ctime, Article.user,
                                         Article.area,
                                         Article.comment_count, Article.like_count, Article.dislike_count,
-                                        ).filter(Article.category_id == cate_id, Article.status == Article.STATUS.APPROVED,
+                                        ).filter(Article.category_id == cate_id,
+                                                 Article.status == Article.STATUS.APPROVED,
                                                  Article.ctime < date).order_by(
                     Article.ctime.desc()).limit(HOME_PRE_PAGE).all()
 
@@ -128,6 +132,8 @@ GET
 """
 
 
+
+
 class ArticleDetailResource(Resource):
     method_decorators = {'put': [login_required]}
 
@@ -144,21 +150,7 @@ class ArticleDetailResource(Resource):
             return {'message': "Access Violation", 'data': None}, 403
 
         # 序列化
-        article_dict = {
-            'area_id': data.area.id,
-            'area_name': data.area.area_name,
-            'art_id': data.id,
-            'title': data.title,
-            'pubdate': data.ctime.isoformat(),
-            'update': data.utime.isoformat(),
-            'aut_id': data.user.id,
-            'aut_name': data.user.name,
-            'aut_photo': data.user.profile_photo,
-            'content': data.article_content.content,
-            'comment_count': data.comment_count,
-            'like_count': data.like_count,
-            'dislike_count': data.dislike_count
-        }
+        article_dict = data.todict()
 
         # 返回数据
         return article_dict
@@ -188,6 +180,9 @@ class ArticleDetailResource(Resource):
         db.session.commit()
 
         return {'article': data.id, 'title': data.title, "uptime": data.utime.isoformat()}, 201
+
+
+"""创建文章主类"""
 
 
 class CreateArticleResource(Resource):
@@ -220,7 +215,7 @@ class CreateArticleResource(Resource):
             if article.category.cate_name == '游记':
                 article.user.travel_note_num += 1
             else:
-                article.user.note_num +=1
+                article.user.note_num += 1
 
             print('存储文章内容')
 
@@ -248,9 +243,10 @@ post  '/app/dolike/'
 
 """
 
+"""点赞游记主类"""
+
 
 class LikeArticleResource(Resource):
-    """点赞游记主类"""
     method_decorators = [login_required]
 
     def post(self):
@@ -291,8 +287,10 @@ class LikeArticleResource(Resource):
             return {"message": '操作失败！', 'data': None}, 400
 
 
+"""点赞用户主类"""
+
+
 class LikeUserResource(Resource):
-    """点赞用户主类"""
     method_decorators = [login_required]
 
     def post(self):
@@ -334,8 +332,10 @@ class LikeUserResource(Resource):
             return {"message": '操作失败！', 'data': None}, 400
 
 
+"""点赞评论主类"""
+
+
 class LikeCommentResource(Resource):
-    """点赞评论主类"""
     method_decorators = [login_required]
 
     def post(self):
@@ -380,8 +380,10 @@ class LikeCommentResource(Resource):
             return {"message": '操作失败！', 'data': None}, 400
 
 
+"""点踩游记 or 评论 主类"""
+
+
 class DisLikeArticleResource(Resource):
-    """点踩游记 or 评论 主类"""
     method_decorators = [login_required]
 
     def post(self):
@@ -458,6 +460,219 @@ class DisLikeArticleResource(Resource):
                 print(e)
                 db.session.rollback()
                 return {"message": '操作失败！', 'data': None}, 400
+
+
+
+def auto_data():
+    """自动填充数据库"""
+
+
+    area_list = db.session.query(Area).filter(Area.parent_id == 0).all()
+    # print(area_list)
+    print(11111111111)
+
+    # print(area_list[33].subs.all()[0].area_name)
+
+    # 用户id list
+    user_list = [1,2,4]
+
+    # 分类id list
+    cate_list = [1,2,3,4,5,6]
+
+
+    for area in area_list:
+
+        sub_model_list = area.subs.all()
+        # 创建 澳门，香港，台湾 数据
+        if len(sub_model_list) == 0:
+            art_list = []
+            # 创建 澳门，香港，台湾 数据
+            for i in range(10):
+                art_list.append(Article(category_id=cate_list[0],
+                                    user_id=user_list[0], area_id=area.id,
+                                    title="测试数据-{}话题".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[1],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}求助".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[2],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}活动".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[3],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}公告".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[4],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}商家".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[5],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}游记".format(area.area_name)))
+
+            spe = Special(area_id=area.id, spe_intr="介绍%s---测试数据" % (area.area_name),
+                          spe_cultural="特色文化%s----测试数据" % (area.area_name),
+                          spe_scenery="特色美景%s----测试数据" % (area.area_name),
+                          spe_snack="特色小吃%s----测试数据" % (area.area_name))
+
+            db.session.add_all(art_list)
+            db.session.add(spe)
+            db.session.flush()
+            content = []
+            for article in art_list:
+                if article.category.cate_name == '游记':
+                    article.user.travel_note_num += 1
+                else:
+                    article.user.note_num += 1
+
+                content.append(ArticleContent(article_id=article.id, content="测试数据-{}".format(area.area_name)))
+                # input('循环文章')
+
+            db.session.add_all(content)
+            db.session.commit()
+            # input('存储到数据库，文章内容')
+            # 执行完跳过此循环
+            # print(area.area_name)
+            continue
+
+#
+        if len(sub_model_list) == 1:
+            # 判断只到 区级
+            # print(sub_model_list)
+            # input('等待')
+            sub_model_list = sub_model_list[0].subs.all()
+
+            if sub_model_list[0].area_name == '市辖区':
+                sub_model_list = sub_model_list[1:]
+
+        if sub_model_list[0].area_name == '市辖区':
+            sub_model_list = sub_model_list[1:]
+
+        # print(sub_model_list)
+        # input('等待')
+        for area in sub_model_list:
+
+            art_list = []
+            # print(area.area_name)
+            for i in range(10):
+                art_list.append(Article(category_id=cate_list[0],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}话题".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[1],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}求助".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[2],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}活动".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[3],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}公告".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[4],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}商家".format(area.area_name)))
+                art_list.append(Article(category_id=cate_list[5],
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}游记".format(area.area_name)))
+
+            # 排除 已存在数据
+            if area.id == 951211:
+                continue
+
+            spe = Special(area_id=area.id, spe_intr="介绍%s---测试数据"%(area.area_name),
+                          spe_cultural="特色文化%s----测试数据"%(area.area_name), spe_scenery="特色美景%s----测试数据"%(area.area_name),
+                          spe_snack="特色小吃%s----测试数据"%(area.area_name))
+
+            db.session.add_all(art_list)
+            db.session.add(spe)
+            db.session.flush()
+            content = []
+            for article in art_list:
+                if article.category.cate_name == '游记':
+                    article.user.travel_note_num += 1
+                else:
+                    article.user.note_num += 1
+
+                content.append(ArticleContent(article_id=article.id, content="测试数据-{}".format(area.area_name)))
+
+            db.session.add_all(content)
+            db.session.commit()
+
+
+#     # for area in area_list[3,]:
+#     #     # print('所有的省份数据')
+#     #     for city in area.subs.all():
+#     #         # print('下一级 市')
+#     #         print(city)
+#     #         sub_model_list = city.subs.all()
+#     #         # print(sub_model_list)
+#     #         if len(sub_model_list) == 1:
+#     #             print()
+#     #             sub_model_list = sub_model_list[0].subs.all()
+#     #
+#     # for item in area_list[33].subs.all():
+#     #     print(item.area_name)
+
+
+
+
+
+
+
+"""特色文章"""
+
+
+class SpecialResource(Resource):
+
+    def post(self):
+        """创建特色"""
+        parser = RequestParser()
+        parser.add_argument('spe_intr', required=True, location='json', type=str)
+        parser.add_argument('spe_cultural', required=True, location='json', type=str)
+        parser.add_argument('spe_scenery', required=True, location='json', type=str)
+        parser.add_argument('spe_snack', required=True, location='json', type=str)
+        parser.add_argument('area_id', required=True, location='json', type=int)
+        # 获取参数
+        args = parser.parse_args()
+        spe_intr = args.spe_intr
+        spe_cultural = args.spe_cultural
+        spe_scenery = args.spe_scenery
+        spe_snack = args.spe_snack
+        area_id = args.area_id
+
+        # 存入数据库
+        spe = Special(area_id=area_id, spe_intr=spe_intr, spe_cultural=spe_cultural, spe_scenery=spe_scenery,
+                      spe_snack=spe_snack)
+
+        try:
+            # 提交
+            db.session.add(spe)
+            db.session.commit()
+        except Exception as e:
+            print('特色，数据库，创建失败')
+            print(e)
+            db.session.rollback()
+            return {"message": '创建失败！', 'data': None}, 401
+
+        return {"message": "OK", "area_id": area_id, "special_id": spe.id}
+
+    def get(self):
+        parser = RequestParser()
+        parser.add_argument('area_id', required=True, location='args', type=int)
+        # 获取参数
+        args = parser.parse_args()
+        area_id = args.area_id
+        auto_data()
+
+
+        try:
+            # 数据库查询
+            spe_mod = Special.query.options(load_only(Special.id)).filter(Special.area_id == area_id).first()
+        except Exception as e:
+            print('特色 数据库查询失败')
+            print(e)
+            return {"message": '查询失败！', 'data': None}, 401
+
+        return {"message": "OK", "data": spe_mod.todict()}
+
+
+
 
 
 

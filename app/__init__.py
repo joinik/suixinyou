@@ -57,9 +57,6 @@ from .models.routing_db.routing_sqlalchemy import RoutingSQLAlchemy
 # db = RoutingSQLAlchemy()
 
 
-redis_master = None  # type: StrictRedis
-redis_slave = None  # type: StrictRed
-
 # 创建集群客户端对象
 redis_cluster = None
 

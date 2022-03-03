@@ -6,7 +6,7 @@ from utils.constants import BASE_URL_PRIFIX
 
 # 1.创建蓝图对象
 from .profile import CurrentUserResource, UserPhotoResource, UserInfoResource
-from .router_card import TravelCardResource
+from .router_card import TravelCardResource, WeatherResource
 
 user_bp = Blueprint('user', __name__, url_prefix=BASE_URL_PRIFIX)
 
@@ -32,5 +32,6 @@ user_api.add_resource(CurrentUserResource, '/user')
 user_api.add_resource(UserInfoResource, '/user/info')
 user_api.add_resource(UserPhotoResource, '/user/photo')
 user_api.add_resource(TravelCardResource, '/travel_card')
+user_api.add_resource(WeatherResource, '/ip')
 
 

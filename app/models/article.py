@@ -40,8 +40,8 @@ class Article(db.Model, TimeBaseModel):
 
     # area = db.relationship("Area", backref=db.backref('articles', lazy='dynamic'), uselist=False)
     user = db.relationship("User", backref=db.backref('articles', lazy='dynamic'), uselist=False)
-    category = db.relationship('Category', backref=db.backref('articles', lazy='dynamic'))
-    area = db.relationship('Area', backref='articles', uselist=False)
+    category = db.relationship('Category', backref=db.backref('articles', lazy='dynamic'), uselist=False)
+    area = db.relationship('Area', backref=db.backref('articles', lazy='dynamic'), uselist=False)
     # category = db.relationship('Category', backref=db.backref('articles', lazy='dynamic'), uselist=False)
     # # 当前新闻的所有评论
     comments = db.relationship("Comment", backref=db.backref('article', uselist=False), lazy="dynamic")
@@ -52,6 +52,7 @@ class Article(db.Model, TimeBaseModel):
 
     def todict(self):
         return {
+            'cate_name': self.category.cate_name,
             'area_id': self.area.id,
             'area_name': self.area.area_name,
             'art_id': self.id,
@@ -79,6 +80,28 @@ class ArticleContent(db.Model):
     # extend_existing = True
     article_id = db.Column(db.Integer, db.ForeignKey("article_basic.id"), primary_key=True, doc='文章ID')
     content = db.Column(db.Text, doc='帖文内容')
+
+
+
+class Special(db.Model):
+    """特色类"""
+
+    id = db.Column(db.Integer,primary_key=True,doc='特色主键')
+    spe_intr = db.Column(db.String(256), doc='当地介绍')
+    spe_cultural = db.Column(db.String(256), doc='文化特色')
+    spe_scenery = db.Column(db.String(256), doc='美丽景色')
+    spe_snack = db.Column(db.String(256),doc='特色小吃')
+    area_id = db.Column(db.Integer, db.ForeignKey('tb_area.id'), doc='地区ID')
+
+
+    def todict(self):
+        return {
+            "area_id": self.area_id,
+            "spe_intr": self.spe_intr,
+            "spe_cultural": self.spe_cultural,
+            "spe_scenery": self.spe_scenery,
+            "spe_snack": self.spe_snack
+        }
 
 
 

@@ -27,6 +27,12 @@ class UserCacheTTL(BaseCacheTTL):
     TTL = 60 * 60 * 2  # 过期时间
     MAX_DELTA = 600  # 最大随机值
 
+
+class WeatherCacheTTL(BaseCacheTTL):
+    """天气缓存过期时间类"""
+    TTL = 60 * 60 * 6  # 过期时间  6 小时
+    MAX_DELTA = 600  # 最大随机值
+
 class UserNotExistTTL(BaseCacheTTL):
     """用户不存在过期时间类"""
     pass

@@ -58,7 +58,7 @@ class AreaProvinceResource(Resource):
 class SubsResource(Resource):
 
     def get(self, pk):
-
+        print('')
         # 查询redis集群缓存
         if redis_cluster.get("sub_data_" + str(pk)):
             print(">>>>>>>>>>>>subs缓存")
@@ -72,6 +72,12 @@ class SubsResource(Resource):
                 # print(sub_model_list)
                 if len(sub_model_list) ==1:
                     sub_model_list = sub_model_list[0].subs.all()
+                    if sub_model_list[0].area_name == '市辖区':
+                        sub_model_list = sub_model_list[1:]
+
+                elif sub_model_list != []:
+                    if sub_model_list[0].area_name == '市辖区':
+                        sub_model_list = sub_model_list[1:]
 
                 subs = [{"area_id": item.id, "area_name": item.area_name, "area_code": item.city_code} for item in sub_model_list]
 

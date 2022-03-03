@@ -32,6 +32,11 @@ class DefaultConfig:
         {'host': '192.168.17.131', 'port': 7000},
     ]
 
+    #
+    # elasticsearch集群服务器的地址
+    ES = [
+        '192.168.17.131:9200'
+    ]
 
     # JWT
     JWT_SECRET = 'TPmi4aLWRbyVq8zu9v81dWYW17/z+UvRnYTt4P6fAXA'  # 秘钥

@@ -181,19 +181,11 @@ class TravelCardResource(Resource):
 class WeatherResource(Resource):
 
     def get(self):
-
-
-
-
         ip = request.remote_addr
         city = g.city
         # print(city)
         # 根据前端发送的 用户地址信息
         try:
-            # 1. 数据库查询 用户城市的文章信息
-            # area_model = Area.query.options(load_only(Area.id)). \
-            #     filter(Area.area_name.like('%' + city + '%'), Area.id == Article.area_id).\
-            #     group_by(Article.category_id).all()
             parser = RequestParser()
             parser.add_argument('city', location='args', type=str)
             args = parser.parse_args()
@@ -204,6 +196,7 @@ class WeatherResource(Resource):
             if city1:
                 city = city1
 
+            # 1. 数据库查询 用户城市的文章信息
             area_model = Area.query.options(load_only(Area.id)). \
                 filter(or_(Area.area_name.like('%' + city + '%'),Area.id == city)).first()
 
@@ -218,7 +211,7 @@ class WeatherResource(Resource):
         print(area_model)
         # input('等待')
 
-        area_article = []
+        area_article = {}
         # 1.1 数据序列化
         gonggao = []  # 公告列表
         huati = []  # 话题列表
@@ -252,12 +245,12 @@ class WeatherResource(Resource):
                     continue
                 business.append(item.todict())
 
-        area_article.append({'公告': gonggao})
-        area_article.append({'话题': huati})
-        area_article.append({'求助': qiuzhu})
-        area_article.append({'活动': huodong})
-        area_article.append({'游记': youji})
-        area_article.append({'商家': business})
+        area_article['公告'] = gonggao
+        area_article['话题'] =  huati
+        area_article['求助'] = qiuzhu
+        area_article['活动'] =  huodong
+        area_article['游记'] = youji
+        area_article['商家'] =  business
 
         # print("文章数据")
         # print(area_article)
@@ -276,6 +269,7 @@ class WeatherResource(Resource):
             redis_cluster.set("weather_data_" + str(area_name), html, 3600 * 6)  # 有效期6小时
         else:
             html = eval(html)
-        return {'ip': ip, "message": "OK", "data": {"area_article": area_article, "weather": html}}
+            print('天气数据缓存')
+        return {'ip': ip, "area_id": area_model.id, "message": "OK", "data": {"area_article": area_article, "weather": html}}
 
 

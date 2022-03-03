@@ -12,9 +12,10 @@ from utils.constants import HOME_PRE_PAGE
 
 from utils.decorators import login_required
 
+"""分类主类"""
+
 
 class CategoryResource(Resource):
-    """分类主类"""
 
     def get(self):
         # 数据库查询获取所有分类
@@ -30,9 +31,8 @@ class CategoryResource(Resource):
         # 组装分类结构
         cat_rest = [{"id": item.id, "name": item.cate_name} for item in cat_list]
 
-
         # 返回响应
-        return {"message": "OK", "data": cat_rest}
+        return cat_rest
 
 
 class CategoryDetailResource(Resource):
@@ -63,7 +63,8 @@ class CategoryDetailResource(Resource):
                 rest = db.session.query(Article.id, Article.title, Article.user_id, Article.ctime, Article.user,
                                         Article.area,
                                         Article.comment_count, Article.like_count, Article.dislike_count,
-                                        ).filter(Article.category_id == cate_id, Article.status == Article.STATUS.APPROVED,
+                                        ).filter(Article.category_id == cate_id,
+                                                 Article.status == Article.STATUS.APPROVED,
                                                  Article.ctime < date).order_by(
                     Article.ctime.desc()).limit(HOME_PRE_PAGE).all()
 
@@ -128,6 +129,8 @@ GET
 """
 
 
+
+
 class ArticleDetailResource(Resource):
     method_decorators = {'put': [login_required]}
 
@@ -176,6 +179,9 @@ class ArticleDetailResource(Resource):
         return {'article': data.id, 'title': data.title, "uptime": data.utime.isoformat()}, 201
 
 
+"""创建文章主类"""
+
+
 class CreateArticleResource(Resource):
     method_decorators = {'post': [login_required]}
 
@@ -206,7 +212,7 @@ class CreateArticleResource(Resource):
             if article.category.cate_name == '游记':
                 article.user.travel_note_num += 1
             else:
-                article.user.note_num +=1
+                article.user.note_num += 1
 
             print('存储文章内容')
 
@@ -234,9 +240,10 @@ post  '/app/dolike/'
 
 """
 
+"""点赞游记主类"""
+
 
 class LikeArticleResource(Resource):
-    """点赞游记主类"""
     method_decorators = [login_required]
 
     def post(self):
@@ -277,8 +284,10 @@ class LikeArticleResource(Resource):
             return {"message": '操作失败！', 'data': None}, 400
 
 
+"""点赞用户主类"""
+
+
 class LikeUserResource(Resource):
-    """点赞用户主类"""
     method_decorators = [login_required]
 
     def post(self):
@@ -320,8 +329,10 @@ class LikeUserResource(Resource):
             return {"message": '操作失败！', 'data': None}, 400
 
 
+"""点赞评论主类"""
+
+
 class LikeCommentResource(Resource):
-    """点赞评论主类"""
     method_decorators = [login_required]
 
     def post(self):
@@ -366,8 +377,10 @@ class LikeCommentResource(Resource):
             return {"message": '操作失败！', 'data': None}, 400
 
 
+"""点踩游记 or 评论 主类"""
+
+
 class DisLikeArticleResource(Resource):
-    """点踩游记 or 评论 主类"""
     method_decorators = [login_required]
 
     def post(self):
@@ -446,11 +459,9 @@ class DisLikeArticleResource(Resource):
                 return {"message": '操作失败！', 'data': None}, 400
 
 
-
-
-
-
 """特色文章"""
+
+
 class SpecialResource(Resource):
 
     def post(self):
@@ -470,7 +481,8 @@ class SpecialResource(Resource):
         area_id = args.area_id
 
         # 存入数据库
-        spe = Special(area_id=area_id, spe_intr=spe_intr,spe_cultural=spe_cultural,spe_scenery=spe_scenery,spe_snack=spe_snack)
+        spe = Special(area_id=area_id, spe_intr=spe_intr, spe_cultural=spe_cultural, spe_scenery=spe_scenery,
+                      spe_snack=spe_snack)
 
         try:
             # 提交
@@ -482,8 +494,7 @@ class SpecialResource(Resource):
             db.session.rollback()
             return {"message": '创建失败！', 'data': None}, 401
 
-        return {"message":"OK", "area_id": area_id, "special_id":spe.id}
-
+        return {"message": "OK", "area_id": area_id, "special_id": spe.id}
 
     def get(self):
         parser = RequestParser()
@@ -500,8 +511,17 @@ class SpecialResource(Resource):
             print(e)
             return {"message": '查询失败！', 'data': None}, 401
 
-
         return {"message": "OK", "data": spe_mod.todict()}
+
+
+
+
+
+def auto_data():
+    """自动填充数据库"""
+
+    # 根据用户数据，进行操作
+
 
 
 

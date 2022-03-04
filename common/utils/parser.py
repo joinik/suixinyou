@@ -40,7 +40,7 @@ def username_type(username_str):
     :param username_str: str 被检验字符串
     :return: username_str
     """
-    if re.match(r'^[a-zA-Z0-9_-]{5,20}$', username_str):
+    if re.match(r'\S{3,10}', username_str):
         return username_str
     else:
         raise ValueError('{} is not a valid username'.format(username_str))

@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timedelta
 
 import requests
-from flask import current_app, g
+from flask import current_app, g, request
 from flask_restful import Resource
 import random
 from flask_restful.inputs import regex
@@ -19,6 +19,7 @@ from utils.parser import mobile_type, username_type, pwd_type
 from app.models.user import User, UserProfile
 
 from common.utils.jwt_util import _generate_tokens
+from common.utils.req_ip import req_area
 
 """
 前端  用户输入手机号 点击获取短信验证码， 发送axiou请求  手机号
@@ -144,34 +145,33 @@ class LoginResource(Resource):
         user = User.query.options(load_only(User.id)).filter(User.mobile == mobile).first()
         # print(user)
         # print('查询结束')
-        if user:
+
+        # 获取用户 ip
+        ip = request.remote_addr
+        city = req_area(ip)
+
+        try:
+            # 1. 数据库查询 用户城市的文章信息
+            area_model = Area.query.options(load_only(Area.id)).filter(
+                Area.area_name.like('%' + city + '%')).first()
+        except Exception as e:
+            print("地区查询 数据库，失败", )
+            print(e)
+            return {"message": "Invalid Access", "data": None}, 401
+
+
+        if user: # 用户如果存在，更新用户的登陆时间，以及，上次的地址id
             user.last_login = datetime.now()
-        else:
-            try:
-                # 进行用户名查询，存在，就不让存储数据了
-                if User.query.options(load_only(User.id)).filter(User.name == nick_name).first():
-                    return  {"message": "用户名重复", "data": None}, 400
-
-                print("数据库插入用户数据")
-                user = User(mobile=mobile, name=nick_name, last_login=datetime.now())
-
-                city = g.city
-            except Exception as e:
-                print("地区查询 数据库，失败", )
-                print(e)
-                return {"message": "Invalid Access", "data": None}, 401
-
-
-            try:
-                # 1. 数据库查询 用户城市的文章信息
-                area_model = Area.query.options(load_only(Area.id)).filter(
-                    Area.area_name.like('%' + city + '%')).first()
-            except Exception as e:
-                print("地区查询 数据库，失败", )
-                print(e)
-                return {"message": "Invalid Access", "data": None}, 401
-
             user.last_area_id = area_model.id
+
+        else: # 不存在，则数据库插入用户数据
+
+            # 进行用户名查询，存在，就不让存储数据了
+            if User.query.options(load_only(User.id)).filter(User.name == nick_name).first():
+                return  {"message": "用户名重复", "data": None}, 400
+
+            print("数据库插入用户数据")
+            user = User(mobile=mobile, name=nick_name, last_login=datetime.now(),last_area_id=area_model.id)
 
             db.session.add(user)
             # 先插入数据，才能拿到user的id

@@ -31,7 +31,7 @@ class Article(db.Model, TimeBaseModel):
     area_id = db.Column(db.Integer, db.ForeignKey('tb_area.id'), doc='地区ID')
 
     title = db.Column(db.String(128), doc='文章标题')
-    # cover = db.Column(db.JSON, doc='封面')
+    cover = db.Column(db.JSON, doc='封面')
     status = db.Column(db.Integer, default=2, doc='文章状态')
     reason = db.Column(db.String(256), doc='未通过原因')
     comment_count = db.Column(db.Integer, default=0, doc='评论数')
@@ -57,6 +57,7 @@ class Article(db.Model, TimeBaseModel):
             'area_name': self.area.area_name,
             'art_id': self.id,
             'title': self.title,
+            'cover': self.cover,
             'pubdate': self.ctime.isoformat(),
             'update': self.utime.isoformat(),
             'aut_id': self.user.id,

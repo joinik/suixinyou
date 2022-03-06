@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from flask import g
+from flask import g, request
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 from sqlalchemy.orm import load_only
@@ -14,6 +14,8 @@ from utils.constants import HOME_PRE_PAGE
 from utils.decorators import login_required
 
 from app.models.user import User
+from common.utils.img_storage import upload_file
+from common.utils.parser import image_file
 
 """分类主类"""
 
@@ -191,12 +193,16 @@ class CreateArticleResource(Resource):
     def post(self):
         """创建文章"""
         parser = RequestParser()
-        parser.add_argument('category_id', required=True, location='json', type=int)
-        parser.add_argument('area_id', required=True, location='json', type=int)
-        parser.add_argument('title', required=True, location='json', type=str)
+        parser.add_argument('category_id', required=True, location='form', type=int)
+        parser.add_argument('area_id', required=True, location='form', type=int)
+        parser.add_argument('title', required=True, location='form', type=str)
         # parser.add_argument('cover', required=True, location='json', type=str)
-        parser.add_argument('content', required=True, location='json', type=str)
+        parser.add_argument('content', required=True, location='form', type=str)
+        parser.add_argument('photo', required=True, type=image_file, location='files', action='append')
 
+
+
+        # 获取参数
         args = parser.parse_args()
         user_id = g.user_id
 
@@ -204,10 +210,32 @@ class CreateArticleResource(Resource):
         area_id = args.area_id
         title = args.title
         content = args.content
+        upload_files = args.photo
+
+        # print(upload_files)
+        # input("-------------")
+
+        # key的值
+        index_num = 0
+        # 图片字典
+        cover_dict = {}
+        for img_file in upload_files:
+            # 读取二进制数据
+            img_bytes = img_file.read()
+            index_num += 1
+            try:
+                file_url = upload_file(img_bytes)
+                # 添加到 图片字典中
+                cover_dict[str(index_num)] = file_url
+            except BaseException as e:
+                return {'message': 'thired Error: %s' % e, 'data': None}, 500
+
+
+
 
         try:
             # 存入数据库
-            article = Article(category_id=category_id, user_id=user_id, area_id=area_id, title=title)
+            article = Article(category_id=category_id, user_id=user_id, area_id=area_id, title=title, cover=cover_dict)
             print('存储文章基本信息')
             db.session.add(article)
             # 先执行插入插入操作， 才能获取article 的id
@@ -220,7 +248,7 @@ class CreateArticleResource(Resource):
             print('存储文章内容')
 
             art_content = ArticleContent(article_id=article.id, content=content)
-            db.session.add(art_content, article)
+            db.session.add(art_content)
             db.session.commit()
             return {'article': article.id, 'title': article.title, 'time': article.ctime.isoformat()}, 201
 
@@ -228,6 +256,44 @@ class CreateArticleResource(Resource):
             db.session.rollback()
             print(e)
             return {'message': "Access Violation", 'data': None}, 403
+
+
+
+
+
+
+class ArticlePhoto(Resource):
+    """文章照片上传"""
+
+    def post(self):
+        # 构造请求参数
+        parser = RequestParser()
+        parser.add_argument('category_id', required=True, location='json', type=int)
+        parser.add_argument('area_id', required=True, location='json', type=int)
+        parser.add_argument('title', required=True, location='json', type=str)
+
+        args = parser.parse_args()
+        upload_files = args.photo
+
+        print(upload_files)
+        input("-------------")
+
+        # key的值
+        index_num = 0
+        # 图片字典
+        cover_dict = {}
+        for img_file in upload_files:
+            # 读取二进制数据
+            img_bytes = img_file.read()
+            index_num +=1
+            try:
+                file_url = upload_file(img_bytes)
+                # 添加到 图片字典中
+                cover_dict[str(index_num)] = file_url
+            except BaseException as e:
+                return {'message': 'thired Error: %s' % e, 'data': None}, 500
+
+
 
 
 """

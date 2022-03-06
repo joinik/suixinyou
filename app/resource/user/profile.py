@@ -177,8 +177,11 @@ class UserPhotoResource(Resource):
         args = parser.parse_args()
         img_file = args.photo
 
+
+
         # 读取二进制数据
         img_bytes = img_file.read()
+
         try:
             file_url = upload_file(img_bytes)
         except BaseException as e:

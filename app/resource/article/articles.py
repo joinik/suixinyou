@@ -14,6 +14,7 @@ from utils.constants import HOME_PRE_PAGE
 from utils.decorators import login_required
 
 from app.models.user import User
+from common.cache.weather import WeatherCache
 from common.utils.img_storage import upload_file
 from common.utils.parser import image_file
 
@@ -170,15 +171,17 @@ class ArticleDetailResource(Resource):
 
         # 根据文章id，作者id是否是用户id 查询数据
         data = Article.query.options(load_only(Article.id)). \
-            filter(Article.id == article_id, Article.status == 2, Article.user_id == g.user_id).first()
+            filter(Article.id == article_id, Article.status == 2, Article.user_id == g.user_id)\
+            .first()
+            # .update({'title':title, 'article_content.content':content})
 
         if not data:
             return {'message': "Access Violation", 'data': None}, 403
 
         data.title = title
-        data.content = content
-
-        db.session.add(data)
+        data.article_content.content = content
+        #
+        # db.session.add(data)
         db.session.commit()
 
         return {'article': data.id, 'title': data.title, "uptime": data.utime.isoformat()}, 201
@@ -198,7 +201,7 @@ class CreateArticleResource(Resource):
         parser.add_argument('title', required=True, location='form', type=str)
         # parser.add_argument('cover', required=True, location='json', type=str)
         parser.add_argument('content', required=True, location='form', type=str)
-        parser.add_argument('photo', required=True, type=image_file, location='files', action='append')
+        parser.add_argument('photo', type=image_file, location='files', action='append')
 
 
 
@@ -250,6 +253,10 @@ class CreateArticleResource(Resource):
             art_content = ArticleContent(article_id=article.id, content=content)
             db.session.add(art_content)
             db.session.commit()
+            # 删除缓存
+            wc = WeatherCache(areaid=area_id)
+            wc.clear()
+
             return {'article': article.id, 'title': article.title, 'time': article.ctime.isoformat()}, 201
 
         except Exception as e:
@@ -526,6 +533,69 @@ class DisLikeArticleResource(Resource):
                 print(e)
                 db.session.rollback()
                 return {"message": '操作失败！', 'data': None}, 400
+
+
+
+
+
+class AreaArtilceLikeDetail(Resource):
+    """根据地区id，查询用户点赞的情况"""
+    method_decorators = [login_required]
+
+    def get(self):
+        parser = RequestParser()
+        parser.add_argument('area_id', required=True, location='json', type=int)
+        parser.add_argument('cate_id', required=True, location='json', type=int)
+
+
+        # 获取 参数 area_id
+        args = parser.parse_args()
+        area_id = args.area_id    # 地区id
+        cate_id = args.cate_id    # 分类id
+
+        print(cate_id)
+        print(area_id)
+        # 用户ID
+        user_id = g.user_id
+
+        # 根据area_id
+
+        try:
+
+            area_modle = Area.query.options(load_only(Area.id)).filter(Area.id == area_id).first()
+
+            # 游记的id 为 6
+            # category_id == 6
+            art_list = area_modle.articles.filter(Article.status == Article.STATUS.APPROVED,
+                                            Article.category_id == cate_id).all()
+
+
+            rest = []
+            for item in art_list:
+                # 判断用户对此文章点赞没
+                if item.like_lists.filter(LikeComment.liker_id == user_id).all():
+                    # 添加文章id
+                    rest.append(item.id)
+
+            return rest
+
+        except Exception as e:
+            print('数据库 查询文章地区点赞 失败')
+            print(e)
+            print(1222222222222222)
+            return {"message": "非法 访问"}, 400
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -199,3 +199,12 @@ class UserPhotoResource(Resource):
 
 
 
+
+
+"""身份证验证视图"""
+class VerifyID(Resource):
+    def post(self):
+        # 构造请求参数
+        parser = RequestParser()
+        parser.add_argument('id_code', required=True, location='json')
+

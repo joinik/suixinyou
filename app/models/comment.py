@@ -51,7 +51,7 @@ class LikeComment(db.Model, TimeBaseModel):
     __tablename__ = 'tb_like'
     __table_args__ = {"extend_existing": True}
     id = db.Column(db.Integer, primary_key=True, doc='点赞id')
-    liker_id = db.Column(db.Integer, db.ForeignKey("user_basic.id"), doc='点赞用户ID')
+    liker_id = db.Column(db.Integer, db.ForeignKey("user_basic.id"), nullable=False, doc='点赞用户ID')
     article_id = db.Column(db.Integer, db.ForeignKey("article_basic.id"), doc='文章ID')
     comment_id = db.Column(db.Integer, db.ForeignKey("article_comment.comment_id"), doc='评论ID')
     liked_id = db.Column(db.Integer, db.ForeignKey("user_basic.id"), doc='被点赞用户ID')

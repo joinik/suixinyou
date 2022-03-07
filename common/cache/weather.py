@@ -29,7 +29,7 @@ class WeatherCache:
     def __init__(self, areaid):
 
         self.areaid = areaid  # areaid 地区id
-        self.key = 'area:{}:weather:'.format(self.areaid)  # redis的键
+        self.key = 'area:{}:weather'.format(self.areaid)  # redis的键
 
     def get(self, area_model=None, city_code=None):
         """获取数据"""

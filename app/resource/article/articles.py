@@ -528,8 +528,8 @@ class AreaArtilceLikeDetail(Resource):
 
     def get(self):
         parser = RequestParser()
-        parser.add_argument('area_id', required=True, location='json', type=int)
-        parser.add_argument('cate_id', required=True, location='json', type=int)
+        parser.add_argument('area_id', required=True, location='args', type=int)
+        parser.add_argument('cate_id', required=True, location='args', type=int)
 
 
         # 获取 参数 area_id

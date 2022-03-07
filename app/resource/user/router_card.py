@@ -70,7 +70,7 @@ class TravelCardResource(Resource):
                 return {"message": "以重复 添加", "data": None}, 401
 
         if not model_list:
-            return {"message": "Invalid Access"}, 400
+            return {"message": "重复创建行程", "data": None}, 400
 
         try:
             # 进行数据库存储

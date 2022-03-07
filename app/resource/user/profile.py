@@ -225,7 +225,10 @@ class VerifyID(Resource):
         args = parser.parse_args()
         id_code = args.id_code
         name = args.name
-        print(id_code)
+        # print(id_code)
+
+
+
 
         return {"message": "OK", "data": None}
 

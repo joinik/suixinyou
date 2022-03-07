@@ -14,6 +14,7 @@ from utils.constants import HOME_PRE_PAGE
 from utils.decorators import login_required
 
 from app.models.user import User
+from common.cache.users import UserCache
 from common.cache.weather import WeatherCache
 from common.utils.img_storage import upload_file
 from common.utils.parser import image_file
@@ -246,6 +247,7 @@ class CreateArticleResource(Resource):
             if article.category.cate_name == '游记':
                 article.user.travel_note_num += 1
             else:
+                # 话题,求助，活动 则 发帖数 +1
                 article.user.note_num += 1
 
             print('存储文章内容')
@@ -254,6 +256,9 @@ class CreateArticleResource(Resource):
             db.session.add(art_content)
             db.session.commit()
             # 删除缓存
+            usercache = UserCache(user_id)
+            usercache.clear()
+
             wc = WeatherCache(areaid=area_id)
             wc.clear()
 
@@ -273,38 +278,6 @@ class CreateArticleResource(Resource):
 
 
 
-
-
-class ArticlePhoto(Resource):
-    """文章照片上传"""
-
-    def post(self):
-        # 构造请求参数
-        parser = RequestParser()
-        parser.add_argument('category_id', required=True, location='json', type=int)
-        parser.add_argument('area_id', required=True, location='json', type=int)
-        parser.add_argument('title', required=True, location='json', type=str)
-
-        args = parser.parse_args()
-        upload_files = args.photo
-
-        print(upload_files)
-        input("-------------")
-
-        # key的值
-        index_num = 0
-        # 图片字典
-        cover_dict = {}
-        for img_file in upload_files:
-            # 读取二进制数据
-            img_bytes = img_file.read()
-            index_num +=1
-            try:
-                file_url = upload_file(img_bytes)
-                # 添加到 图片字典中
-                cover_dict[str(index_num)] = file_url
-            except BaseException as e:
-                return {'message': 'thired Error: %s' % e, 'data': None}, 500
 
 
 
@@ -402,6 +375,11 @@ class LikeUserResource(Resource):
 
             db.session.add(like_model)
             db.session.commit()
+
+            # 清除缓存
+            usercache = UserCache(user_id)
+            usercache.clear()
+
             return {'liker_id': g.user_id, 'liked_id': user_id, 'time': like_model.utime.isoformat()}, 201
 
         except Exception as e:

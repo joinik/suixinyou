@@ -9,8 +9,9 @@ from app.models.user import User, UserProfile
 
 from utils.parser import image_file
 
-from app import db
+from app import db, redis_cluster
 from common.cache.users import UserCache
+from common.cache.weather import WeatherCache
 from common.utils.img_storage import upload_file
 from common.utils.parser import username_type, email_type, id_number
 
@@ -194,7 +195,14 @@ class UserPhotoResource(Resource):
         # 将数据对象删除
         usercache = UserCache(userid)
         usercache.clear()
+        # 清除 文章天气 数据
 
+        key_list = [key for key in redis_cluster.scan_iter(match='area:*', count=10000)]
+        redis_cluster.delete(*key_list)
+
+
+
+        print("清除 文章天气 缓存")
         return {'photo_url': file_url}
 
 

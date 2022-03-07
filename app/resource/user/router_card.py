@@ -125,9 +125,9 @@ class TravelCardResource(Resource):
         # 1.根据area_id,user_id 查询用户的行程计划
         parser = RequestParser()
         parser.add_argument('area_id', required=True, location='json', type=int)
-        parser.add_argument('arrive_time', required=True, location='json', type=str)
-        parser.add_argument('new_area_id', required=True, location='json', type=int)
-        parser.add_argument('new_arrive_time', required=True, location='json', type=str)
+        parser.add_argument('arrive_time', location='json', type=str)
+        parser.add_argument('new_area_id', location='json', type=int)
+        parser.add_argument('new_arrive_time', location='json', type=str)
         parser.add_argument('action', location='json', type=str)
 
         # 1.1 获取参数

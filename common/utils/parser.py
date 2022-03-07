@@ -79,6 +79,7 @@ def action_parser(value):
         raise ValueError('Invalid action')
 
 
+
 def image_file(value):
     """
     检查是否是图片文件

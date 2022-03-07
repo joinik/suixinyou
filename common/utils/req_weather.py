@@ -16,8 +16,6 @@ def async_weather(area_name):
                 assert resp.status_code == 200
                 print('天气返回响应')
                 html = resp.json()
-                print(type(html))
-                print(resp)
                 # input('等待》》》》')
                 return html
 

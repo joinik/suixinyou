@@ -28,7 +28,7 @@ class User(db.Model):
     dianliang_area_num = db.Column(db.Integer, default=0, doc='点亮地区数')
     last_area_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), doc='用户上次位置')
     last_area = db.relationship("Area", backref=db.backref('users', uselist=False), uselist=False)
-
+    is_Certification = db.Column(db.Integer, default=0, doc='身份认证，0没认证，1认证成功')
     def to_dict(self):
         """模型转字典, 用于序列化处理"""
         return {

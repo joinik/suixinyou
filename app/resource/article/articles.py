@@ -257,7 +257,13 @@ class CreateArticleResource(Resource):
             wc = WeatherCache(areaid=area_id)
             wc.clear()
 
-            return {'article': article.id, 'title': article.title, 'time': article.ctime.isoformat()}, 201
+            rest = {'article': article.id,
+                    'title': article.title,
+                    'time': article.ctime.isoformat(),
+                    'cover': article.cover,
+                    }
+
+            return rest, 201
 
         except Exception as e:
             db.session.rollback()

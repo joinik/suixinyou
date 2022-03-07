@@ -12,7 +12,7 @@ from utils.parser import image_file
 from app import db
 from common.cache.users import UserCache
 from common.utils.img_storage import upload_file
-from common.utils.parser import username_type, email_type
+from common.utils.parser import username_type, email_type, id_number
 
 """
 获取用户基本信息
@@ -203,8 +203,22 @@ class UserPhotoResource(Resource):
 
 """身份证验证视图"""
 class VerifyID(Resource):
+    # 添加 装饰器
+    method_decorators = [login_required]
+
     def post(self):
         # 构造请求参数
         parser = RequestParser()
-        parser.add_argument('id_code', required=True, location='json')
+        parser.add_argument('id_code', required=True, location='json', type=id_number)
+        parser.add_argument('name', required=True, location='json', type=str)
+
+
+        # 获取参数
+        args = parser.parse_args()
+        id_code = args.id_code
+        name = args.name
+        print(id_code)
+
+        return {"message": "OK", "data": None}
+
 

@@ -42,13 +42,12 @@ class Article(db.Model, TimeBaseModel):
     user = db.relationship("User", backref=db.backref('articles', lazy='dynamic'), uselist=False)
     category = db.relationship('Category', backref=db.backref('articles', lazy='dynamic'), uselist=False)
     area = db.relationship('Area', backref=db.backref('articles', lazy='dynamic'), uselist=False)
-    # category = db.relationship('Category', backref=db.backref('articles', lazy='dynamic'), uselist=False)
     # # 当前新闻的所有评论
     comments = db.relationship("Comment", backref=db.backref('article', uselist=False), lazy="dynamic")
     article_content = db.relationship("ArticleContent",
-                                      backref=db.backref('articles', uselist=False), uselist=False)
-
-
+                                      backref=db.backref('articles', uselist=False,), cascade='all, delete-orphan',
+                                      uselist=False,
+                                      )
 
     def todict(self):
         return {
@@ -79,21 +78,20 @@ class ArticleContent(db.Model):
 
     # __table_args__ = {'extend_existing': True}
     # extend_existing = True
-    article_id = db.Column(db.Integer, db.ForeignKey("article_basic.id"), primary_key=True, doc='文章ID')
+    article_id = db.Column(db.Integer, db.ForeignKey("article_basic.id", ondelete='CASCADE'), primary_key=True,
+                           doc='文章ID')
     content = db.Column(db.Text, doc='帖文内容')
-
 
 
 class Special(db.Model):
     """特色类"""
 
-    id = db.Column(db.Integer,primary_key=True,doc='特色主键')
+    id = db.Column(db.Integer, primary_key=True, doc='特色主键')
     spe_intr = db.Column(db.String(256), doc='当地介绍')
     spe_cultural = db.Column(db.String(256), doc='文化特色')
     spe_scenery = db.Column(db.String(256), doc='美丽景色')
-    spe_snack = db.Column(db.String(256),doc='特色小吃')
+    spe_snack = db.Column(db.String(256), doc='特色小吃')
     area_id = db.Column(db.Integer, db.ForeignKey('tb_area.id'), doc='地区ID')
-
 
     def todict(self):
         return {
@@ -103,7 +101,3 @@ class Special(db.Model):
             "spe_scenery": self.spe_scenery,
             "spe_snack": self.spe_snack
         }
-
-
-
-

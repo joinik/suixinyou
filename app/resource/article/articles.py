@@ -139,7 +139,7 @@ GET
 
 
 class ArticleDetailResource(Resource):
-    method_decorators = {'put': [login_required]}
+    method_decorators = {'put': [login_required], 'delete':[login_required]}
 
     def get(self, article_id):
         """查询文章"""
@@ -186,6 +186,26 @@ class ArticleDetailResource(Resource):
         db.session.commit()
 
         return {'article': data.id, 'title': data.title, "uptime": data.utime.isoformat()}, 201
+
+
+    def delete(self, article_id):
+
+        try:
+            # 根据文章id，作者id是否是用户id 查询数据
+            data = Article.query.options(load_only(Article.id)). \
+                filter(Article.id == article_id, Article.status == 2, Article.user_id == g.user_id) \
+                .delete()
+
+            db.session.commit()
+            return {"message": "OK", "data": None}
+
+        except Exception as e:
+            db.session.rollback()
+            print('文章删除失败')
+            print(e)
+            return {'message': "Access Violation", 'data': None}, 403
+
+
 
 
 """创建文章主类"""
@@ -557,7 +577,7 @@ class AreaArtilceLikeDetail(Resource):
             rest = []
             for item in art_list:
                 # 判断用户对此文章点赞没
-                if item.like_lists.filter(LikeComment.liker_id == user_id).all():
+                if item.like_lists.filter(LikeComment.liker_id == user_id, LikeComment.relation ==1).all():
                     # 添加文章id
                     rest.append(item.id)
 

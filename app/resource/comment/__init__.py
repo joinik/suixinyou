@@ -16,7 +16,7 @@ from utils.output import output_json
 comment_api.representation('application/json')(output_json)
 
 # 添加类视图
-comment_api.add_resource(CommentCreateResource, '/comments/create')
+comment_api.add_resource(CommentCreateResource, '/comments')
 
 # article_api.add_resource(CreateArticleResource, '/articles/create')
 # article_api.add_resource(LikeArticleResource, '/articles/likes')

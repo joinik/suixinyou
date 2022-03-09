@@ -1,6 +1,8 @@
 from app import db
 from utils.my_model import TimeBaseModel
 
+from app.models.comment import Comment
+
 
 class Category(db.Model, TimeBaseModel):
     """文章分类"""
@@ -45,7 +47,7 @@ class Article(db.Model, TimeBaseModel):
     # # 当前新闻的所有评论
     comments = db.relationship("Comment", backref=db.backref("article", uselist=False), lazy="dynamic")
     article_content = db.relationship("ArticleContent",
-                                      backref=db.backref("articles", uselist=False,),
+                                      backref=db.backref("articles", uselist=False, ),
                                       cascade="all, delete-orphan",
                                       # passive_deletes=True,
                                       # single_parent=True,
@@ -68,7 +70,17 @@ class Article(db.Model, TimeBaseModel):
             "content": self.article_content.content,
             "comment_count": self.comment_count,
             "like_count": self.like_count,
-            "dislike_count": self.dislike_count
+            "dislike_count": self.dislike_count,
+            "comment_list": [{
+                "com_id": item.comment_id,
+                "aut_id": item.user.id,
+                "aut_name": item.user.name,
+                "aut_photo": item.user.profile_photo,
+                "pubdate": item.ctime.isoformat(),
+                "content": item.content,
+                "reply_count": item.reply_count,
+                "like_count": item.like_count
+            } for item in self.comments.filter(Comment.status == Comment.STATUS.APPROVED).limit(2)]
         }
 
 
@@ -102,8 +114,8 @@ class Special(db.Model):
     snack_photo = db.Column(db.JSON, doc="小吃图片")
     area_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), nullable=False, doc="地区ID")
     user_id = db.Column(db.Integer, db.ForeignKey("user_basic.id", ondelete="CASCADE"), doc="用户ID")
-    user = db.relationship("User", backref=db.backref("special", lazy="dynamic", cascade="all, delete-orphan"), uselist=False)
-
+    user = db.relationship("User", backref=db.backref("special", lazy="dynamic", cascade="all, delete-orphan"),
+                           uselist=False)
 
     def to_dict(self):
         return {
@@ -119,5 +131,3 @@ class Special(db.Model):
             "scenery_photo": self.scenery_photo,
             "snack_photo": self.snack_photo
         }
-
-

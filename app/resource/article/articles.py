@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from flask import g, request
@@ -136,10 +137,8 @@ GET
 """
 
 
-
-
 class ArticleDetailResource(Resource):
-    method_decorators = {'put': [login_required], 'delete':[login_required]}
+    method_decorators = {'put': [login_required], 'delete': [login_required]}
 
     def get(self, article_id):
         """查询文章"""
@@ -154,7 +153,7 @@ class ArticleDetailResource(Resource):
             return {'message': "Access Violation", 'data': None}, 403
 
         # 序列化
-        article_dict = data.todict()
+        article_dict = data.to_dict()
 
         # 返回数据
         return article_dict
@@ -172,9 +171,9 @@ class ArticleDetailResource(Resource):
 
         # 根据文章id，作者id是否是用户id 查询数据
         data = Article.query.options(load_only(Article.id)). \
-            filter(Article.id == article_id, Article.status == 2, Article.user_id == g.user_id)\
+            filter(Article.id == article_id, Article.status == 2, Article.user_id == g.user_id) \
             .first()
-            # .update({'title':title, 'article_content.content':content})
+        # .update({'title':title, 'article_content.content':content})
 
         if not data:
             return {'message': "Access Violation", 'data': None}, 403
@@ -186,7 +185,6 @@ class ArticleDetailResource(Resource):
         db.session.commit()
 
         return {'article': data.id, 'title': data.title, "uptime": data.utime.isoformat()}, 201
-
 
     def delete(self, article_id):
 
@@ -206,8 +204,6 @@ class ArticleDetailResource(Resource):
             return {'message': "Access Violation", 'data': None}, 403
 
 
-
-
 """创建文章主类"""
 
 
@@ -223,8 +219,6 @@ class CreateArticleResource(Resource):
         # parser.add_argument('cover', required=True, location='json', type=str)
         parser.add_argument('content', required=True, location='form', type=str)
         parser.add_argument('photo', type=image_file, location='files', action='append')
-
-
 
         # 获取参数
         args = parser.parse_args()
@@ -253,9 +247,6 @@ class CreateArticleResource(Resource):
                 cover_dict[str(index_num)] = file_url
             except BaseException as e:
                 return {'message': 'thired Error: %s' % e, 'data': None}, 500
-
-
-
 
         try:
             # 存入数据库
@@ -294,12 +285,6 @@ class CreateArticleResource(Resource):
             db.session.rollback()
             print(e)
             return {'message': "Access Violation", 'data': None}, 403
-
-
-
-
-
-
 
 
 """
@@ -539,9 +524,6 @@ class DisLikeArticleResource(Resource):
                 return {"message": '操作失败！', 'data': None}, 400
 
 
-
-
-
 class AreaArtilceLikeDetail(Resource):
     """根据地区id，查询用户点赞的情况"""
     method_decorators = [login_required]
@@ -551,11 +533,10 @@ class AreaArtilceLikeDetail(Resource):
         parser.add_argument('area_id', required=True, location='args', type=int)
         parser.add_argument('cate_id', required=True, location='args', type=int)
 
-
         # 获取 参数 area_id
         args = parser.parse_args()
-        area_id = args.area_id    # 地区id
-        cate_id = args.cate_id    # 分类id
+        area_id = args.area_id  # 地区id
+        cate_id = args.cate_id  # 分类id
 
         print(cate_id)
         print(area_id)
@@ -571,13 +552,12 @@ class AreaArtilceLikeDetail(Resource):
             # 游记的id 为 6
             # category_id == 6
             art_list = area_modle.articles.filter(Article.status == Article.STATUS.APPROVED,
-                                            Article.category_id == cate_id).all()
-
+                                                  Article.category_id == cate_id).all()
 
             rest = []
             for item in art_list:
                 # 判断用户对此文章点赞没
-                if item.like_lists.filter(LikeComment.liker_id == user_id, LikeComment.relation ==1).all():
+                if item.like_lists.filter(LikeComment.liker_id == user_id, LikeComment.relation == 1).all():
                     # 添加文章id
                     rest.append(item.id)
 
@@ -590,22 +570,8 @@ class AreaArtilceLikeDetail(Resource):
             return {"message": "非法 访问"}, 400
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 def auto_data():
     """自动填充数据库"""
-
 
     area_list = db.session.query(Area).filter(Area.parent_id == 0).all()
     # print(area_list)
@@ -614,11 +580,10 @@ def auto_data():
     # print(area_list[33].subs.all()[0].area_name)
 
     # 用户id list
-    user_list = [1,2,4]
+    user_list = [1, 2, 4]
 
     # 分类id list
-    cate_list = [1,2,3,4,5,6]
-
+    cate_list = [1, 2, 3, 4, 5, 6]
 
     for area in area_list:
 
@@ -629,8 +594,8 @@ def auto_data():
             # 创建 澳门，香港，台湾 数据
             for i in range(10):
                 art_list.append(Article(category_id=cate_list[0],
-                                    user_id=user_list[0], area_id=area.id,
-                                    title="测试数据-{}话题".format(area.area_name)))
+                                        user_id=user_list[0], area_id=area.id,
+                                        title="测试数据-{}话题".format(area.area_name)))
                 art_list.append(Article(category_id=cate_list[1],
                                         user_id=user_list[0], area_id=area.id,
                                         title="测试数据-{}求助".format(area.area_name)))
@@ -672,7 +637,7 @@ def auto_data():
             # print(area.area_name)
             continue
 
-#
+        #
         if len(sub_model_list) == 1:
             # 判断只到 区级
             # print(sub_model_list)
@@ -715,9 +680,10 @@ def auto_data():
             if area.id == 951211:
                 continue
 
-            spe = Special(area_id=area.id, spe_intr="介绍%s---测试数据"%(area.area_name),
-                          spe_cultural="特色文化%s----测试数据"%(area.area_name), spe_scenery="特色美景%s----测试数据"%(area.area_name),
-                          spe_snack="特色小吃%s----测试数据"%(area.area_name))
+            spe = Special(area_id=area.id, spe_intr="介绍%s---测试数据" % (area.area_name),
+                          spe_cultural="特色文化%s----测试数据" % (area.area_name),
+                          spe_scenery="特色美景%s----测试数据" % (area.area_name),
+                          spe_snack="特色小吃%s----测试数据" % (area.area_name))
 
             db.session.add_all(art_list)
             db.session.add(spe)
@@ -735,39 +701,55 @@ def auto_data():
             db.session.commit()
 
 
-#     # for area in area_list[3,]:
-#     #     # print('所有的省份数据')
-#     #     for city in area.subs.all():
-#     #         # print('下一级 市')
-#     #         print(city)
-#     #         sub_model_list = city.subs.all()
-#     #         # print(sub_model_list)
-#     #         if len(sub_model_list) == 1:
-#     #             print()
-#     #             sub_model_list = sub_model_list[0].subs.all()
-#     #
-#     # for item in area_list[33].subs.all():
-#     #     print(item.area_name)
-
-
-
-
-
-
-
 """特色文章"""
 
 
 class SpecialResource(Resource):
+    method_decorators = {"post": [login_required]}
+
+    def get(self):
+        parser = RequestParser()
+        parser.add_argument('area_id', required=True, location='args', type=int)
+
+        # 获取参数
+        args = parser.parse_args()
+        area_id = args.area_id
+
+
+        try:
+            # 数据库查询
+            spe_mod = Special.query.options(load_only(Special.id)).filter(Special.area_id == area_id).all()
+
+
+
+        except Exception as e:
+            print('特色 数据库查询失败')
+            print(e)
+            return {"message": '查询失败！', 'data': None}, 401
+        if spe_mod:
+            if len(spe_mod) > 1:
+                rest = [item.to_dict() for item in spe_mod]
+                return {"message": "OK", "data": rest}
+
+            return {"message": "OK", "data": spe_mod.to_dict()}
+        else:
+            return {"message": '查询失败！', 'data': None}, 401
+
 
     def post(self):
         """创建特色"""
         parser = RequestParser()
-        parser.add_argument('spe_intr', required=True, location='json', type=str)
-        parser.add_argument('spe_cultural', required=True, location='json', type=str)
-        parser.add_argument('spe_scenery', required=True, location='json', type=str)
-        parser.add_argument('spe_snack', required=True, location='json', type=str)
-        parser.add_argument('area_id', required=True, location='json', type=int)
+        parser.add_argument('spe_intr', required=True, location='form', type=str)
+        parser.add_argument('spe_cultural', required=True, location='form', type=str)
+        parser.add_argument('spe_scenery', required=True, location='form', type=str)
+        parser.add_argument('spe_snack', required=True, location='form', type=str)
+        parser.add_argument('area_id', required=True, location='form', type=str)
+        parser.add_argument('intr_photo', type=image_file, location='files', action='append')
+        parser.add_argument('cultural_photo', type=image_file, location='files', action='append')
+        parser.add_argument('scenery_photo', type=image_file, location='files', action='append')
+        parser.add_argument('snack_photo', type=image_file, location='files', action='append')
+        parser.add_argument('action', type=str, location='form')
+        print('11111111111111111111111')
         # 获取参数
         args = parser.parse_args()
         spe_intr = args.spe_intr
@@ -775,10 +757,106 @@ class SpecialResource(Resource):
         spe_scenery = args.spe_scenery
         spe_snack = args.spe_snack
         area_id = args.area_id
+        intr_photo = args.intr_photo
+        cultural_photo = args.cultural_photo
+        scenery_photo = args.scenery_photo
+        snack_photo = args.snack_photo
+        user_id = g.user_id
 
-        # 存入数据库
-        spe = Special(area_id=area_id, spe_intr=spe_intr, spe_cultural=spe_cultural, spe_scenery=spe_scenery,
-                      spe_snack=spe_snack)
+        print('获取到的参数')
+        print(intr_photo)
+        print(cultural_photo)
+        print(scenery_photo)
+        print(snack_photo)
+
+        # input('等待》》》》》》》》》》》')
+        # 图片字典
+        intr_dict = {}
+        if intr_photo:  # 判断 特色 简介图片是否存在
+            # key的值
+            index_num = 0
+
+            for img_file in intr_photo:
+                # 读取二进制数据
+                img_bytes = img_file.read()
+                index_num += 1
+                try:
+                    file_url = upload_file(img_bytes)
+                    # 添加到 图片字典中
+                    intr_dict[str(index_num)] = file_url
+                except BaseException as e:
+                    return {'message': 'thired Error: %s' % e, 'data': None}, 400
+        # 图片字典
+        cult_dict = {}
+        if cultural_photo:  # 判断 特色 文化图片是否存在
+            # key的值
+            index_num = 0
+
+            for img_file in cultural_photo:
+                # 读取二进制数据
+                img_bytes = img_file.read()
+                index_num += 1
+                try:
+                    file_url = upload_file(img_bytes)
+                    # 添加到 图片字典中
+                    cult_dict[str(index_num)] = file_url
+                except BaseException as e:
+                    return {'message': 'thired Error: %s' % e, 'data': None}, 400
+
+        # 图片字典
+        scenery_dict = {}
+        if scenery_photo:  # 判断 特色 美景图片是否存在
+            # key的值
+            index_num = 0
+
+            for img_file in scenery_photo:
+                # 读取二进制数据
+                img_bytes = img_file.read()
+                index_num += 1
+                try:
+                    file_url = upload_file(img_bytes)
+                    # 添加到 图片字典中
+                    scenery_dict[str(index_num)] = file_url
+                except BaseException as e:
+                    return {'message': 'thired Error: %s' % e, 'data': None}, 400
+
+        # 图片字典
+        snack_dict = {}
+        if snack_photo:  # 判断 特色 小吃图片是否存在
+            # key的值
+            index_num = 0
+
+            for img_file in snack_photo:
+                # 读取二进制数据
+                img_bytes = img_file.read()
+                index_num += 1
+                try:
+                    file_url = upload_file(img_bytes)
+                    # 添加到 图片字典中
+                    snack_dict[str(index_num)] = file_url
+                except BaseException as e:
+                    return {'message': 'thired Error: %s' % e, 'data': None}, 400
+
+
+        # 查询 数据库中是否存有数据
+        spe = Special.query.options(load_only(Special.id)). \
+            filter(Special.area_id == area_id, Special.user_id == user_id).first()
+
+        if spe:
+            spe.spe_intr = spe_intr
+            spe.spe_cultural = spe_cultural
+            spe.spe_scenery = spe_scenery
+            spe.spe_snack = spe_snack
+            spe.intr_photo = intr_dict
+            spe.cultural_photo = cult_dict
+            spe.scenery_photo = scenery_dict
+            spe.snack_photo = snack_dict
+
+        else:
+            # 存入数据库
+            spe = Special(area_id=area_id, spe_intr=spe_intr, spe_cultural=spe_cultural, spe_scenery=spe_scenery,
+                          spe_snack=spe_snack, intr_photo=intr_dict, cultural_photo=cult_dict, user_id=user_id,
+                          scenery_photo=scenery_dict, snack_photo=snack_dict)
 
         try:
             # 提交
@@ -788,33 +866,9 @@ class SpecialResource(Resource):
             print('特色，数据库，创建失败')
             print(e)
             db.session.rollback()
-            return {"message": '创建失败！', 'data': None}, 401
+            return {"message": '创建失败！', "data": None}
 
         return {"message": "OK", "area_id": area_id, "special_id": spe.id}
-
-    def get(self):
-        parser = RequestParser()
-        parser.add_argument('area_id', required=True, location='args', type=int)
-        # 获取参数
-        args = parser.parse_args()
-        area_id = args.area_id
-        # auto_data()
-
-
-        try:
-            # 数据库查询
-            spe_mod = Special.query.options(load_only(Special.id)).filter(Special.area_id == area_id).first()
-        except Exception as e:
-            print('特色 数据库查询失败')
-            print(e)
-            return {"message": '查询失败！', 'data': None}, 401
-
-        return {"message": "OK", "data": spe_mod.todict()}
-
-
-
-
-
 
 
 

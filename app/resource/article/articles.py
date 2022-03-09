@@ -232,21 +232,22 @@ class CreateArticleResource(Resource):
 
         # print(upload_files)
         # input("-------------")
-
-        # key的值
-        index_num = 0
-        # 图片字典
         cover_dict = {}
-        for img_file in upload_files:
-            # 读取二进制数据
-            img_bytes = img_file.read()
-            index_num += 1
-            try:
-                file_url = upload_file(img_bytes)
-                # 添加到 图片字典中
-                cover_dict[str(index_num)] = file_url
-            except BaseException as e:
-                return {'message': 'thired Error: %s' % e, 'data': None}, 500
+
+        if upload_files:
+            # key的值
+            index_num = 0
+            # 图片字典
+            for img_file in upload_files:
+                # 读取二进制数据
+                img_bytes = img_file.read()
+                index_num += 1
+                try:
+                    file_url = upload_file(img_bytes)
+                    # 添加到 图片字典中
+                    cover_dict[str(index_num)] = file_url
+                except BaseException as e:
+                    return {'message': 'thired Error: %s' % e, 'data': None}, 500
 
         try:
             # 存入数据库

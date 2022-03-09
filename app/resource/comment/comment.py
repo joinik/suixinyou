@@ -7,6 +7,7 @@ from utils.decorators import login_required
 
 from app import db
 from app.models.comment import Comment
+from common.cache.weather import WeatherCache
 
 
 class CommentCreateResource(Resource):
@@ -33,7 +34,8 @@ class CommentCreateResource(Resource):
             # 如果传递过来了父评论的id，那么则是对评论进行评论
             try:
                 # 查询父评论
-                parent_comment = Comment.query.options(load_only(Comment.comment_id)).filter(Comment.comment_id == parent_id, Comment.status ==1).first()
+                parent_comment = Comment.query.options(load_only(Comment.comment_id)).\
+                    filter(Comment.comment_id == parent_id, Comment.status ==1).first()
                 parent_comment.reply_count += 1
 
             except Exception as e:
@@ -49,6 +51,11 @@ class CommentCreateResource(Resource):
                 comment_model.article.comment_count +=1
                 db.session.add(comment_model)
                 db.session.commit()
+                # 清除 redis中的文章 缓存
+                wc = WeatherCache(areaid=comment_model.article.area_id)
+                wc.clear()
+
+
                 return {"comment_id": comment_model.comment_id, "time": comment_model.ctime.isoformat()}, 201
 
             except Exception as e:
@@ -59,13 +66,20 @@ class CommentCreateResource(Resource):
         else:
             # 如果没有 则存储评论到数据库
             try:
-                comment_model = Comment(article_id=art_id, user_id=user_id, content=comment_text)
+                comment_model = Comment(article_id=art_id, user_id=user_id,
+                                        content=comment_text)
                 db.session.add(comment_model)
                 db.session.flush()
                 comment_model.article.comment_count += 1
                 db.session.add(comment_model)
                 db.session.commit()
+
+                # 清除 redis中的文章 缓存
+                wc = WeatherCache(areaid=comment_model.article.area_id)
+                wc.clear()
+
                 return {"comment_id": comment_model.comment_id, "time": comment_model.ctime.isoformat()}, 201
+
             except Exception as e:
                 db.session.rollback()
                 print("评论数据库创建失败", e)

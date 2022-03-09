@@ -335,6 +335,10 @@ class LikeArticleResource(Resource):
 
             db.session.add(like_model)
             db.session.commit()
+            # 清除 redis中的文章 缓存
+            wc = WeatherCache(areaid=like_model.article.area_id)
+            wc.clear()
+
             return {'liker_id': g.user_id, 'art_id': art_id, 'time': like_model.utime.isoformat()}, 201
 
         except Exception as e:
@@ -432,6 +436,8 @@ class LikeCommentResource(Resource):
 
             db.session.add(like_model)
             db.session.commit()
+
+
 
             return {'liker_id': g.user_id, 'comment_id': comment_id, 'time': like_model.utime.isoformat()}, 201
 

@@ -112,7 +112,9 @@ class Special(db.Model):
     cultural_photo = db.Column(db.JSON, doc="文化图片")
     scenery_photo = db.Column(db.JSON, doc="美景图片")
     snack_photo = db.Column(db.JSON, doc="小吃图片")
-    spe_title = db.Column(db.String(128), doc="特色标题")
+    spe_title = db.Column(db.String(128), doc="特色标题")    # 此字段 只有用户有
+    story = db.Column(db.Text, doc='我的故事')               # 此字段 只有用户有
+    story_photo = db.Column(db.JSON, doc='故事图片')         # 此字段 只有用户有
     area_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), nullable=False, doc="地区ID")
     user_id = db.Column(db.Integer, db.ForeignKey("user_basic.id", ondelete="CASCADE"), doc="用户ID")
     user = db.relationship("User", backref=db.backref("special", lazy="dynamic", cascade="all, delete-orphan"),
@@ -123,6 +125,8 @@ class Special(db.Model):
             "area_id": self.area_id,
             "aut_id": self.user_id,
             "aut_name": self.user.name if self.user_id else None,
+            "spe_title": self.spe_title,
+            "story": self.story,
             "spe_intr": self.spe_intr,
             "spe_cultural": self.spe_cultural,
             "spe_scenery": self.spe_scenery,

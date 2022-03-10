@@ -731,12 +731,11 @@ class SpecialResource(Resource):
                 # 数据库查询
                 spe_mod = Special.query.options(load_only(Special.id)).filter(Special.area_id == area_id).all()
 
-
-
         except Exception as e:
             print('特色 数据库查询失败')
             print(e)
             return {"message": '查询失败！', 'data': None}, 401
+
 
         if spe_mod != []:
             if len(spe_mod) >= 1:
@@ -745,20 +744,26 @@ class SpecialResource(Resource):
 
             return {"message": "OK", "data": spe_mod.to_dict()}
         else:
-            return {"message": '查询失败！', 'data': None}, 401
+            return {"message": '查询失败！', 'data': None}
+
+
 
     def post(self):
         """创建特色"""
         parser = RequestParser()
-        parser.add_argument('spe_intr', required=True, location='form', type=str)
-        parser.add_argument('spe_cultural', required=True, location='form', type=str)
-        parser.add_argument('spe_scenery', required=True, location='form', type=str)
-        parser.add_argument('spe_snack', required=True, location='form', type=str)
+        parser.add_argument('spe_intr', location='form', type=str)
+        parser.add_argument('spe_cultural', location='form', type=str)
+        parser.add_argument('spe_scenery', location='form', type=str)
+        parser.add_argument('spe_snack', location='form', type=str)
         parser.add_argument('area_id', required=True, location='form', type=str)
         parser.add_argument('intr_photo', type=image_file, location='files', action='append')
         parser.add_argument('cultural_photo', type=image_file, location='files', action='append')
         parser.add_argument('scenery_photo', type=image_file, location='files', action='append')
         parser.add_argument('snack_photo', type=image_file, location='files', action='append')
+        parser.add_argument('snack_photo', type=image_file, location='files', action='append')
+        parser.add_argument('story_photo', type=image_file, location='files', action='append')
+        parser.add_argument('title', required=True, location='form', type=str)
+        parser.add_argument('story', location='form', type=str)
         parser.add_argument('action', type=str, location='form')
         print('11111111111111111111111')
         # 获取参数
@@ -772,13 +777,12 @@ class SpecialResource(Resource):
         cultural_photo = args.cultural_photo
         scenery_photo = args.scenery_photo
         snack_photo = args.snack_photo
+        story_photo = args.story_photo
+        title = args.title
+        story = args.story
         user_id = g.user_id
 
         print('获取到的参数')
-        print(intr_photo)
-        print(cultural_photo)
-        print(scenery_photo)
-        print(snack_photo)
 
         # input('等待》》》》》》》》》》》')
         # 图片字典
@@ -848,6 +852,22 @@ class SpecialResource(Resource):
                 except BaseException as e:
                     return {'message': 'thired Error: %s' % e, 'data': None}, 400
 
+        story_dict = {}
+        if story_photo:  # 判断 特色 小吃图片是否存在
+            # key的值
+            index_num = 0
+
+            for img_file in story_photo:
+                # 读取二进制数据
+                img_bytes = img_file.read()
+                index_num += 1
+                try:
+                    file_url = upload_file(img_bytes)
+                    # 添加到 图片字典中
+                    story_dict[str(index_num)] = file_url
+                except BaseException as e:
+                    return {'message': 'thired Error: %s' % e, 'data': None}, 400
+
         # 查询 数据库中是否存有数据
         spe = Special.query.options(load_only(Special.id)). \
             filter(Special.area_id == area_id, Special.user_id == user_id).first()
@@ -861,12 +881,15 @@ class SpecialResource(Resource):
             spe.cultural_photo = cult_dict
             spe.scenery_photo = scenery_dict
             spe.snack_photo = snack_dict
-
+            spe.story_photo = story_dict
+            spe.spe_title = title
+            spe.story = story
         else:
             # 存入数据库
             spe = Special(area_id=area_id, spe_intr=spe_intr, spe_cultural=spe_cultural, spe_scenery=spe_scenery,
                           spe_snack=spe_snack, intr_photo=intr_dict, cultural_photo=cult_dict, user_id=user_id,
-                          scenery_photo=scenery_dict, snack_photo=snack_dict)
+                          story_photo=story_dict,
+                          scenery_photo=scenery_dict, snack_photo=snack_dict, spe_title=title, story=story)
 
         try:
             # 提交
@@ -876,6 +899,6 @@ class SpecialResource(Resource):
             print('特色，数据库，创建失败')
             print(e)
             db.session.rollback()
-            return {"message": '创建失败！', "data": None}
+            return {"message": '创建失败！', "data": None}, 401
 
-        return {"message": "OK", "area_id": area_id, "special_id": spe.id}
+        return {"message": "OK", "data": spe.to_dict()}

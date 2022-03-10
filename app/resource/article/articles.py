@@ -50,7 +50,7 @@ class CategoryDetailResource(Resource):
         # 根据分类id 查询分类的所有文章
         parser = RequestParser()
         parser.add_argument("cate_id", required=True, location='args', type=int)
-        parser.add_argument("timestamp", required=True, location='args', type=int)
+        parser.add_argument("timestamp", default=0, location='args', type=int)
         args = parser.parse_args()
 
         # 获取参数
@@ -68,12 +68,9 @@ class CategoryDetailResource(Resource):
 
             else:
                 # 查询数据
-                rest = db.session.query(Article.id, Article.title, Article.user_id, Article.ctime, Article.user,
-                                        Article.area,
-                                        Article.comment_count, Article.like_count, Article.dislike_count,
-                                        ).filter(Article.category_id == cate_id,
-                                                 Article.status == Article.STATUS.APPROVED,
-                                                 Article.ctime < date).order_by(
+                rest = Article.query.filter(Article.category_id == cate_id,
+                                              Article.status == Article.STATUS.APPROVED,
+                                              Article.ctime < date).order_by(
                     Article.ctime.desc()).limit(HOME_PRE_PAGE).all()
 
         except Exception as e:
@@ -438,8 +435,6 @@ class LikeCommentResource(Resource):
             db.session.add(like_model)
             db.session.commit()
 
-
-
             return {'liker_id': g.user_id, 'comment_id': comment_id, 'time': like_model.utime.isoformat()}, 201
 
         except Exception as e:
@@ -717,15 +712,24 @@ class SpecialResource(Resource):
     def get(self):
         parser = RequestParser()
         parser.add_argument('area_id', required=True, location='args', type=int)
-
+        parser.add_argument('type', location='args', type=str)
         # 获取参数
         args = parser.parse_args()
         area_id = args.area_id
+        flag = args.type
+
 
 
         try:
-            # 数据库查询
-            spe_mod = Special.query.options(load_only(Special.id)).filter(Special.area_id == area_id).all()
+
+            if flag == 'user':
+                print('用户特色')
+                # 数据库查询
+                spe_mod = Special.query.options(load_only(Special.id)).filter(Special.area_id == area_id,Special.user_id.isnot(None)).all()
+
+            else:
+                # 数据库查询
+                spe_mod = Special.query.options(load_only(Special.id)).filter(Special.area_id == area_id).all()
 
 
 
@@ -733,15 +737,15 @@ class SpecialResource(Resource):
             print('特色 数据库查询失败')
             print(e)
             return {"message": '查询失败！', 'data': None}, 401
-        if spe_mod:
-            if len(spe_mod) > 1:
+
+        if spe_mod != []:
+            if len(spe_mod) >= 1:
                 rest = [item.to_dict() for item in spe_mod]
                 return {"message": "OK", "data": rest}
 
             return {"message": "OK", "data": spe_mod.to_dict()}
         else:
             return {"message": '查询失败！', 'data': None}, 401
-
 
     def post(self):
         """创建特色"""
@@ -844,7 +848,6 @@ class SpecialResource(Resource):
                 except BaseException as e:
                     return {'message': 'thired Error: %s' % e, 'data': None}, 400
 
-
         # 查询 数据库中是否存有数据
         spe = Special.query.options(load_only(Special.id)). \
             filter(Special.area_id == area_id, Special.user_id == user_id).first()
@@ -876,6 +879,3 @@ class SpecialResource(Resource):
             return {"message": '创建失败！', "data": None}
 
         return {"message": "OK", "area_id": area_id, "special_id": spe.id}
-
-
-

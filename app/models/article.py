@@ -112,6 +112,7 @@ class Special(db.Model):
     cultural_photo = db.Column(db.JSON, doc="文化图片")
     scenery_photo = db.Column(db.JSON, doc="美景图片")
     snack_photo = db.Column(db.JSON, doc="小吃图片")
+    spe_title = db.Column(db.String(128), doc="特色标题")
     area_id = db.Column(db.Integer, db.ForeignKey("tb_area.id"), nullable=False, doc="地区ID")
     user_id = db.Column(db.Integer, db.ForeignKey("user_basic.id", ondelete="CASCADE"), doc="用户ID")
     user = db.relationship("User", backref=db.backref("special", lazy="dynamic", cascade="all, delete-orphan"),

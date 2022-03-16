@@ -7,9 +7,9 @@ from ronglian_sms_sdk import SmsSDK
 # appId = '8aaf0708780055cd0178d32e77db4fcd'
 
 # lzy
-accId = '8aaf0708780055cd0178d32fb5654fd9'
-accToken = '2da21647480645d2b6e694f25aaa2be2'
-appId = '8a216da878005a800178d330f79d4ffa'
+accId = '8aaf0708780055cd0654fd9'
+accToken = '2da216474806425aaa2be2'
+appId = '8a216da878005a8330f79d4ffa'
 
 
 
